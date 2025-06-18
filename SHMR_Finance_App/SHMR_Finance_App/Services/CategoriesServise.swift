@@ -7,30 +7,66 @@
 
 import Foundation
 
-final class CategoriesService {
-    private let mockCategories: [Category] = [
+final class CategoriesService: ObservableObject {
+    @Published private var mockCategories: [Category] = [
         Category(
             id: 1,
-            name: "Зарплата",
-            emoji: "💰",
-            isIncome: .income
+            name: "Аренда квартиры",
+            emoji: "🏡",
+            isIncome: .outcome
         ),
         Category(
             id: 2,
-            name: "Маркетплейсы",
+            name: "Одежда",
             emoji: "🛍",
             isIncome: .outcome
         ),
         Category(
             id: 3,
-            name: "Бензин",
-            emoji: "🚗",
+            name: "На собачку",
+            emoji: "🐕",
             isIncome: .outcome
         ),
         Category(
             id: 4,
-            name: "Инвестиции",
-            emoji: "📈",
+            name: "Ремонт квартиры",
+            emoji: "🛠",
+            isIncome: .outcome
+        ),
+        Category(
+            id: 5,
+            name: "Продукты",
+            emoji: "🛒",
+            isIncome: .outcome
+        ),
+        Category(
+            id: 6,
+            name: "Спортзал",
+            emoji: "🤸",
+            isIncome: .outcome
+        ),
+        Category(
+            id: 7,
+            name: "Медицина",
+            emoji: "💊",
+            isIncome: .outcome
+        ),
+        Category(
+            id: 8,
+            name: "Машина",
+            emoji: "🚗",
+            isIncome: .outcome
+        ),
+        Category(
+            id: 9,
+            name: "Зарплата",
+            emoji: "💊",
+            isIncome: .income
+        ),
+        Category(
+            id: 10,
+            name: "Подработка",
+            emoji: "🚗",
             isIncome: .income
         )
     ]

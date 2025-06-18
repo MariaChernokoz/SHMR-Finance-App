@@ -7,29 +7,76 @@
 
 import Foundation
 
-final class TransactionsService {
-     private var mockTransactions: [Transaction] = [
+final class TransactionsService: ObservableObject {
+     @Published private var mockTransactions: [Transaction] = [
         Transaction(
             id: 1,
             accountId: 1,
-            categoryId: 1,
+            categoryId: 3,
             amount: Decimal(555.55),
             transactionDate: Date(),
-            comment: "Оплата за услугу",
+            comment: nil,
             createdAt: Date(),
             updatedAt: Date()
         ),
         Transaction(
             id: 2,
             accountId: 1,
-            categoryId: 2,
+            categoryId: 5,
             amount: Decimal(444.00),
             transactionDate: Date(),
             comment: "Другу за кофе",
             createdAt: Date(),
             updatedAt: Date()
+        ),
+        Transaction(
+            id: 3,
+            accountId: 1,
+            categoryId: 3,
+            amount: Decimal(10000.00),
+            transactionDate: Date(),
+            comment: "Ветеринар",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 4,
+            accountId: 1,
+            categoryId: 6,
+            amount: Decimal(9999.99),
+            transactionDate: Date(),
+            comment: "Абонемент",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 5,
+            accountId: 1,
+            categoryId: 9,
+            amount: Decimal(100000.00),
+            transactionDate: Date(),
+            comment: nil,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 6,
+            accountId: 1,
+            categoryId: 10,
+            amount: Decimal(9999.99),
+            transactionDate: Date(),
+            comment: "Продажа картины",
+            createdAt: Date(),
+            updatedAt: Date()
         )
+        
     ]
+    
+    func todayInterval() -> DateInterval {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        return DateInterval(start: startOfDay, end: endOfDay)
+    }
     
     func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
         
