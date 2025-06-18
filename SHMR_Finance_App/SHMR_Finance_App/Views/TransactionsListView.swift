@@ -29,89 +29,108 @@ struct TransactionsListView: View {
         direction == .income ? "Доходы сегодня" : "Расходы сегодня"
     }
     
+    var totalAmount: Decimal {
+        var sum: Decimal = 0
+        for transaction in filteredTransactions {
+            sum += transaction.amount
+        }
+        return sum
+    }
+    
+    //красивое отображение суммы (с пробелом)
+    var totalAmountString: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = " "
+        formatter.maximumFractionDigits = 2
+        return (formatter.string(for: totalAmount) ?? "0") + " ₽"
+    }
+    
+    
     var body: some View {
-        VStack (alignment: .leading, spacing: 15 ){
+        NavigationStack {
             
-            Image(systemName: "clock")
-                .foregroundColor(.purple)
-                .font(.system(size: 22))
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 20)
-            
-            Text(title)
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.horizontal)
-            
-            //всего
-            HStack{
-                Text("Всего")
-                Spacer()
-                Text("100 ₽")
-                    .foregroundColor(.gray)
-            }
-            .padding(15)
-            .background(Color(.white))
-            .cornerRadius(10)
-            .padding(.horizontal, 20)
-            
-            //операции
-            Text("ОПЕРАЦИИ")
-                .font(.caption)
-                .foregroundColor(.gray)
-                .padding(.horizontal, 30)
-                .padding(.top, 5)
-            
-            
-            List(filteredTransactions) { transaction in
+            VStack (alignment: .leading, spacing: 5 ){
+                NavigationLink(destination: HistoryView()) {
+                    Image(systemName: "clock")
+                        .foregroundColor(.purple)
+                        .font(.system(size: 22))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.horizontal, 20)
+                }
                 
-                let category = categories.first(where: { $0.id == transaction.categoryId })
-                HStack {
-                    // эмодзи
-                    Circle()
-                        .fill(Color.green.opacity(0.25))
-                        .frame(width: 22, height: 22)
-                        .overlay(Text(String(category?.emoji ?? "❓"))
-                                .font(.caption)
-                        )
-                    
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(category?.name ?? "Категория \(transaction.categoryId)")
-                            .fontWeight(.medium)
-                        if let comment = transaction.comment {
-                            Text(comment)
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
+                Text(title)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .padding(.horizontal, 20)
+                
+                // List по умолчанию лениво загружают ячейки (?)
+                List {
+                    HStack{
+                        Text("Всего")
+                        Spacer()
+                        Text(totalAmountString)
+                            .foregroundColor(.gray)
+                        
+                        // * разобраться с валютой (?) *
                     }
                     
-                    Spacer()
-                    Text("\(transaction.amount) ₽")
-                        .fontWeight(.medium)
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.gray)
-                        .font(.caption)
+                    Section(header: Text("Операции")) {
+                        ForEach(filteredTransactions) { transaction in
+                            
+                            let category = categories.first(where: { $0.id == transaction.categoryId })
+                            
+                            // * можно вынести в отдельную функцию *
+                            HStack {
+                                // * сделать чтобы эмодзи не отображались в доходах *
+                                // эмодзи
+                                Circle()
+                                    .fill(Color.green.opacity(0.25))
+                                    .frame(width: 22, height: 22)
+                                    .overlay(Text(String(category?.emoji ?? "❓"))
+                                        .font(.caption)
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(category?.name ?? "Категория \(transaction.categoryId)")
+                                        .fontWeight(.medium)
+                                    if let comment = transaction.comment {
+                                        Text(comment)
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                
+                                Spacer()
+                                Text("\(transaction.amount) ₽")
+                                    .fontWeight(.medium)
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.gray)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                }
+                .listSectionSpacing(10)
+            }
+            .background(Color(.systemGray6))
+            .task {
+                
+                do {
+                    let today = transactionsService.todayInterval()
+                    transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
+                } catch {
+                    
+                }
+                
+                do {
+                    categories = try await categoriesService.allCategoriesList()
+                } catch {
+                    
                 }
             }
         }
-        .background(Color(.systemGray6))
-        .task {
-
-            //получение транзакций за сегодня
-            do {
-                let today = transactionsService.todayInterval()
-                transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
-            } catch {
-                
-            }
-            
-            //категории
-            do {
-                categories = try await categoriesService.allCategoriesList()
-            } catch {
-                
-            }
-        }
+        .tint(Color.purple)
     }
 }
 

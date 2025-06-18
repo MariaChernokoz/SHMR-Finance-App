@@ -41,6 +41,8 @@ struct TabBarView: View {
                 }
         }
         .tint(Color.accentColor)
+        
+        // * добавить белый фон у таб бара * 
     }
 }
 
