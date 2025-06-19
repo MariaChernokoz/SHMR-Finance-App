@@ -105,7 +105,17 @@ final class TransactionsService: ObservableObject {
             categoryId: 10,
             amount: Decimal(15000.00),
             transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
-            comment: "Продажа мебели",
+            comment: nil,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 11,
+            accountId: 1,
+            categoryId: 11,
+            amount: Decimal(25000.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date(),
+            comment: nil,
             createdAt: Date(),
             updatedAt: Date()
         )

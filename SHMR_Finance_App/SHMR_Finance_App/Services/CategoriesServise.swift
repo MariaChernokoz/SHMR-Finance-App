@@ -68,6 +68,12 @@ final class CategoriesService: ObservableObject {
             name: "Подработка",
             emoji: "🚗",
             isIncome: .income
+        ),
+        Category(
+            id: 11,
+            name: "Подарок",
+            emoji: "🚗",
+            isIncome: .income
         )
     ]
     

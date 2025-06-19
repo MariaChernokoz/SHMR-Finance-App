@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct HistoryView: View {
+    @Environment(\.dismiss) private var dismiss
+    
     let direction: Direction
     
     //месяц назад, 00:00
@@ -82,40 +84,82 @@ struct HistoryView: View {
         NavigationStack {
             
             VStack (alignment: .leading, spacing: 5 ){ 
-                Text("Моя история")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 20)
                 
                 List {
+                    Section {} header: {
+                        Text("Моя история")
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(.black)
+                            .padding(.bottom, 9)
+                            .textCase(nil)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        
+                    }
+                    
                     HStack {
                         Text("Начало")
                         Spacer()
-                        DatePicker("", selection: $startDate, displayedComponents: [.date, .hourAndMinute])
-                            .labelsHidden()
-                            .background(Color.green.opacity(0.15))
-                            .cornerRadius(8)
+                        HStack {
+                            Text(startDate.formatted(.dateTime.day().month().year()))
+                        }
+                        .padding(.horizontal, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .foregroundColor(.accentColor)
+                                .opacity(0.2)
+                                .padding(.vertical, -7))
+                        
+                        .overlay {
+                            DatePicker(selection: $startDate, displayedComponents: .date) {}
+                                .labelsHidden()
+                                .colorMultiply(.clear)
+                        }
                     }
+                    
                     HStack {
                         Text("Конец")
                         Spacer()
-                        DatePicker("", selection: $endDate, displayedComponents: [.date, .hourAndMinute])
-                            .labelsHidden()
-                            .background(Color.green.opacity(0.15))
-                            .cornerRadius(8)
+                        HStack {
+                            Text(endDate.formatted(.dateTime.day().month().year()))
+                        }
+                        .padding(.horizontal, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .foregroundColor(.accentColor)
+                                .opacity(0.2)
+                                .padding(.vertical, -7))
+                        
+                        .overlay {
+                            DatePicker(selection: $endDate, displayedComponents: .date) {}
+                                .labelsHidden()
+                                .colorMultiply(.clear)
+                        }
                     }
+                    
                     HStack {
                         Text("Сортировка")
                         Spacer()
-                        Picker("", selection: $sortType) {
-                            ForEach(SortType.allCases) { type in
-                                Text(type.rawValue).tag(type)
+                        ZStack {
+                            Text(sortType.rawValue)
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 15)
+                                .padding(.vertical, 7)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(Color.accentColor)
+                                        .opacity(0.2)
+                                )
+                            Picker("", selection: $sortType) {
+                                ForEach(SortType.allCases) { type in
+                                    Text(type.rawValue).tag(type)
+                                }
                             }
+                            .labelsHidden()
+                            .blendMode(.destinationOver)
+                            .contentShape(Rectangle())
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 150)
-                        .background(Color.green.opacity(0.15))
-                        .cornerRadius(8)
                     }
                     HStack {
                         Text("Сумма")
@@ -131,15 +175,15 @@ struct HistoryView: View {
                             // * можно вынести в отдельную функцию *
                             HStack {
                                 // * сделать чтобы эмодзи не отображались в доходах *
-                                // эмодзи
-                                Circle()
-                                    .fill(Color.green.opacity(0.25))
-                                    .frame(width: 22, height: 22)
-                                    .overlay(Text(String(category?.emoji ?? "❓"))
-                                        .font(.system(size: 12))
-                                    )
-                                    .padding(.trailing, 8)
-                                
+                                if direction == .outcome {
+                                    Circle()
+                                        .fill(Color.accentColor.opacity(0.2))
+                                        .frame(width: 22, height: 22)
+                                        .overlay(Text(String(category?.emoji ?? "❓"))
+                                            .font(.system(size: 12))
+                                        )
+                                        .padding(.trailing, 8)
+                                }
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(category?.name ?? "Категория \(transaction.categoryId)")
                                         .fontWeight(.medium)
@@ -187,7 +231,19 @@ struct HistoryView: View {
                 }
             }
         }
-        .tint(Color.purple)
+        .tint(Color.accentColor)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    HStack {
+                        Image(systemName: "chevron.backward")
+                        Text("Назад")
+                    }
+                    .tint(Color.purple)
+                }
+            }
+        }
     }
 }
 

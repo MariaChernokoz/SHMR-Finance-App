@@ -18,7 +18,7 @@ struct TabBarView: View {
             NavigationStack {
                 TransactionsListView(direction: .outcome)
             }
-            .tint(Color.purple)
+            .tint(Color.accentColor)
             .tabItem {
                 Image(systemName: "chart.bar.xaxis")
                 Text("Расходы")
@@ -28,7 +28,7 @@ struct TabBarView: View {
             NavigationStack {
                 TransactionsListView(direction: .income)
             }
-            .tint(Color.purple)
+            .tint(Color.accentColor)
             .tabItem {
                 Image(systemName: "chart.bar.xaxis.ascending")
                 Text("Доходы")

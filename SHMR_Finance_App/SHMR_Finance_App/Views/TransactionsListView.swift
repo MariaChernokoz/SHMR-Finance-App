@@ -53,78 +53,91 @@ struct TransactionsListView: View {
         return (formatter.string(for: totalAmount) ?? "0") + " ₽"
     }
     
-    
     var body: some View {
         NavigationStack {
-            VStack (alignment: .leading, spacing: 5 ){
-                Text(title)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 20)
-                
-                List {
-                    HStack{
-                        Text("Всего")
-                        Spacer()
-                        Text(amountFormatter(totalAmount))
-                            .foregroundColor(.gray)
-                    }
+            ZStack {
+                VStack (alignment: .leading, spacing: 5 ){
+                    Text(title)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 20)
                     
-                    Section(header: Text("Операции")) {
-                        ForEach(filteredTransactions) { transaction in
-                            
-                            let category = categories.first(where: { $0.id == transaction.categoryId })
-                            
-                            // * можно вынести отдельно ? *
-                            HStack {
-                                // * сделать чтобы эмодзи не отображались в доходах *
-                                // эмодзи
-                                Circle()
-                                    .fill(Color.green.opacity(0.25))
-                                    .frame(width: 22, height: 22)
-                                    .overlay(Text(String(category?.emoji ?? "❓"))
-                                        .font(.system(size: 12))
-                                    )
-                                    .padding(.trailing, 8)
+                    List {
+                        HStack{
+                            Text("Всего")
+                            Spacer()
+                            Text(amountFormatter(totalAmount))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Section(header: Text("Операции")) {
+                            ForEach(filteredTransactions) { transaction in
                                 
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(category?.name ?? "Категория \(transaction.categoryId)")
-
-                                    if let comment = transaction.comment {
-                                        Text(comment)
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
+                                let category = categories.first(where: { $0.id == transaction.categoryId })
+                                
+                                // * можно вынести отдельно ? *
+                                HStack {
+                                    // * сделать чтобы эмодзи не отображались в доходах *
+                                    if direction == .outcome {
+                                        Circle()
+                                            .fill(Color.accentColor.opacity(0.2))
+                                            .frame(width: 22, height: 22)
+                                            .overlay(Text(String(category?.emoji ?? "❓"))
+                                                .font(.system(size: 12))
+                                            )
+                                            .padding(.trailing, 8)
                                     }
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        Text(category?.name ?? "неизвестная категория")
+                                        
+                                        if let comment = transaction.comment {
+                                            Text(comment)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    Text("\(transaction.amount) ₽")
+                                    // сделать красивое отображение amount для операций
+                                    //Text(amountFormatter(transaction.amount))
+                                        .fontWeight(.medium)
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                        .font(.caption)
                                 }
-                                
-                                Spacer()
-                                Text("\(transaction.amount) ₽")
-                                // сделать красивое отображение amount для операций
-                                //Text(amountFormatter(transaction.amount))
-                                    .fontWeight(.medium)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
-                                    .font(.caption)
                             }
                         }
                     }
-                }
-                .listSectionSpacing(10)
-            }
-            .background(Color(.systemGray6))
-            .task {
-                
-                do {
-                    let today = transactionsService.todayInterval()
-                    transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
-                } catch {
+                    .listSectionSpacing(10)
                     
                 }
-                
-                do {
-                    categories = try await categoriesService.allCategoriesList()
-                } catch {
+                .background(Color(.systemGray6))
+                .task {
                     
+                    do {
+                        let today = transactionsService.todayInterval()
+                        transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
+                    } catch {
+                        
+                    }
+                    
+                    do {
+                        categories = try await categoriesService.allCategoriesList()
+                    } catch {
+                        
+                    }
+                }
+                NavigationLink(destination: CreateTransactionView()) {
+                    Spacer()
+                    VStack(alignment: .leading) {
+                        Spacer()
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 56, weight: .thin))
+                            .foregroundColor(.accentColor)
+                            .padding(.horizontal)
+                            .padding(.vertical)
+                    }
                 }
             }
         }
@@ -135,8 +148,7 @@ struct TransactionsListView: View {
                         .foregroundColor(.purple)
                 }
             }
-        } 
-        //.tint(Color.purple)
+        }
     }
 }
 
