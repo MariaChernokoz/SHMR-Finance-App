@@ -37,7 +37,14 @@ struct TransactionsListView: View {
         return sum
     }
     
-    //красивое отображение суммы (с пробелом)
+    func amountFormatter (_ amount: Decimal) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = " "
+        formatter.maximumFractionDigits = 2
+        return (formatter.string(for: totalAmount) ?? "0") + " ₽"
+    }
+    
     var totalAmountString: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -49,30 +56,18 @@ struct TransactionsListView: View {
     
     var body: some View {
         NavigationStack {
-            
             VStack (alignment: .leading, spacing: 5 ){
-                NavigationLink(destination: HistoryView()) {
-                    Image(systemName: "clock")
-                        .foregroundColor(.purple)
-                        .font(.system(size: 22))
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.horizontal, 20)
-                }
-                
                 Text(title)
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .padding(.horizontal, 20)
                 
-                // List по умолчанию лениво загружают ячейки (?)
                 List {
                     HStack{
                         Text("Всего")
                         Spacer()
-                        Text(totalAmountString)
+                        Text(amountFormatter(totalAmount))
                             .foregroundColor(.gray)
-                        
-                        // * разобраться с валютой (?) *
                     }
                     
                     Section(header: Text("Операции")) {
@@ -80,7 +75,7 @@ struct TransactionsListView: View {
                             
                             let category = categories.first(where: { $0.id == transaction.categoryId })
                             
-                            // * можно вынести в отдельную функцию *
+                            // * можно вынести отдельно ? *
                             HStack {
                                 // * сделать чтобы эмодзи не отображались в доходах *
                                 // эмодзи
@@ -88,12 +83,13 @@ struct TransactionsListView: View {
                                     .fill(Color.green.opacity(0.25))
                                     .frame(width: 22, height: 22)
                                     .overlay(Text(String(category?.emoji ?? "❓"))
-                                        .font(.caption)
+                                        .font(.system(size: 12))
                                     )
+                                    .padding(.trailing, 8)
                                 
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(category?.name ?? "Категория \(transaction.categoryId)")
-                                        .fontWeight(.medium)
+
                                     if let comment = transaction.comment {
                                         Text(comment)
                                             .font(.caption)
@@ -103,6 +99,8 @@ struct TransactionsListView: View {
                                 
                                 Spacer()
                                 Text("\(transaction.amount) ₽")
+                                // сделать красивое отображение amount для операций
+                                //Text(amountFormatter(transaction.amount))
                                     .fontWeight(.medium)
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.gray)
@@ -130,7 +128,15 @@ struct TransactionsListView: View {
                 }
             }
         }
-        .tint(Color.purple)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: HistoryView(direction: direction)) {
+                    Image(systemName: "clock")
+                        .foregroundColor(.purple)
+                }
+            }
+        } 
+        //.tint(Color.purple)
     }
 }
 

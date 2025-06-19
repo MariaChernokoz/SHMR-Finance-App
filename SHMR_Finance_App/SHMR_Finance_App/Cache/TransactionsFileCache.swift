@@ -7,7 +7,7 @@
 
 import Foundation
 
-class TransactionsFileCache {
+final class TransactionsFileCache {
     
     private(set) var transactions: [Transaction] = []
     let baseURL: URL

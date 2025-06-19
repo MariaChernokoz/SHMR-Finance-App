@@ -33,7 +33,7 @@ final class TransactionsService: ObservableObject {
             id: 3,
             accountId: 1,
             categoryId: 3,
-            amount: Decimal(10000.00),
+            amount: Decimal(1200.00),
             transactionDate: Date(),
             comment: "Ветеринар",
             createdAt: Date(),
@@ -44,13 +44,43 @@ final class TransactionsService: ObservableObject {
             accountId: 1,
             categoryId: 6,
             amount: Decimal(9999.99),
-            transactionDate: Date(),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
             comment: "Абонемент",
             createdAt: Date(),
             updatedAt: Date()
         ),
         Transaction(
             id: 5,
+            accountId: 1,
+            categoryId: 6,
+            amount: Decimal(10000.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date(),
+            comment: "Пилатес",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 6,
+            accountId: 1,
+            categoryId: 6,
+            amount: Decimal(10000.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
+            comment: "Йога",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 7,
+            accountId: 1,
+            categoryId: 8,
+            amount: Decimal(3500.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
+            comment: nil,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 8,
             accountId: 1,
             categoryId: 9,
             amount: Decimal(100000.00),
@@ -60,12 +90,22 @@ final class TransactionsService: ObservableObject {
             updatedAt: Date()
         ),
         Transaction(
-            id: 6,
+            id: 9,
             accountId: 1,
             categoryId: 10,
             amount: Decimal(9999.99),
             transactionDate: Date(),
             comment: "Продажа картины",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 10,
+            accountId: 1,
+            categoryId: 10,
+            amount: Decimal(15000.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
+            comment: "Продажа мебели",
             createdAt: Date(),
             updatedAt: Date()
         )

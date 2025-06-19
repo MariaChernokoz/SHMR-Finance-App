@@ -8,41 +8,65 @@
 import SwiftUI
 
 struct TabBarView: View {
+    init() {
+        UITabBar.appearance().backgroundColor = UIColor.white
+        UITabBar.appearance().unselectedItemTintColor = UIColor.gray
+    }
+    
     var body: some View {
         TabView {
-            TransactionsListView(direction: .outcome)
-                .tabItem {
-                    Image(systemName: "chart.bar.xaxis")
-                    Text("Расходы")
-                }
+            NavigationStack {
+                TransactionsListView(direction: .outcome)
+            }
+            .tint(Color.purple)
+            .tabItem {
+                Image(systemName: "chart.bar.xaxis")
+                Text("Расходы")
+            }
+            .padding(.bottom, 8)
             
-            TransactionsListView(direction: .income)
-                .tabItem {
-                    Image(systemName: "chart.bar.xaxis.ascending")
-                    Text("Доходы")
-                }
+            NavigationStack {
+                TransactionsListView(direction: .income)
+            }
+            .tint(Color.purple)
+            .tabItem {
+                Image(systemName: "chart.bar.xaxis.ascending")
+                Text("Доходы")
+            }
+            .padding(.bottom, 8)
+                
+            NavigationStack {
+                AccountView()
+            }
+            .tint(Color.purple)
+            .tabItem {
+                Image(systemName: "person.crop.circle")
+                Text("Счет")
+            }
+            .padding(.bottom, 8)
             
-            AccountView()
-                .tabItem {
-                    Image(systemName: "person.crop.circle")
-                    Text("Счет")
-                }
-
-            CategoriesView()
-                .tabItem {
-                    Image(systemName: "chart.bar.horizontal.page")
-                    Text("Статьи")
-                }
-
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gearshape.fill")
-                    Text("Настройки")
-                }
+            NavigationStack {
+                CategoriesView()
+            }
+            .tint(Color.purple)
+            .tabItem {
+                Image(systemName: "chart.bar.horizontal.page")
+                Text("Статьи")
+            }
+            .padding(.bottom, 8)
+            
+            NavigationStack {
+                SettingsView()
+            }
+            .tint(Color.purple)
+            .tabItem {
+                Image(systemName: "gearshape.fill")
+                Text("Настройки")
+            }
+            .padding(.bottom, 8)
         }
         .tint(Color.accentColor)
-        
-        // * добавить белый фон у таб бара * 
+        .padding(.bottom, 12)
     }
 }
 
