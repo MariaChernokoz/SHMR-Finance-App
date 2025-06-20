@@ -18,42 +18,47 @@ struct TabBarView: View {
             NavigationStack {
                 TransactionsListView(direction: .outcome)
             }
-            .tint(Color.accentColor)
             .tabItem {
                 Label("Расходы", image: "outcomeTabBarButton")
             }
+            .toolbarBackground(.visible, for: .tabBar)
+            .toolbarBackground(Color.white, for: .tabBar)
             
             NavigationStack {
                 TransactionsListView(direction: .income)
             }
-            .tint(Color.accentColor)
             .tabItem {
                 Label("Доходы", image: "incomeTabBarButton")
             }
+            .toolbarBackground(.visible, for: .tabBar)
+            .toolbarBackground(Color.white, for: .tabBar)
                 
             NavigationStack {
                 AccountView()
             }
-            .tint(Color.purple)
             .tabItem {
                 Label("Счет", image: "accountTabBarButton")
             }
+            .toolbarBackground(.visible, for: .tabBar)
+            .toolbarBackground(Color.white, for: .tabBar)
             
             NavigationStack {
                 CategoriesView()
             }
-            .tint(Color.purple)
             .tabItem {
                 Label("Статьи", image: "categoriesTabBarButton")
             }
+            .toolbarBackground(.visible, for: .tabBar)
+            .toolbarBackground(Color.white, for: .tabBar)
             
             NavigationStack {
                 SettingsView()
             }
-            .tint(Color.purple)
             .tabItem {
                 Label("Настройки", image: "settingsTabBarButton")
             }
+            .toolbarBackground(.visible, for: .tabBar)
+            .toolbarBackground(Color.white, for: .tabBar)
         }
         .tint(Color.accentColor)
         .padding(.bottom, 8)

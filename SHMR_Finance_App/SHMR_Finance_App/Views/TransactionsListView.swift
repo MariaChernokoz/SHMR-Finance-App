@@ -8,57 +8,28 @@
 import SwiftUI
 
 struct TransactionsListView: View {
-    let direction: Direction
-    
-    @StateObject var transactionsService = TransactionsService()
-    @State private var transactions: [Transaction] = []
-    
-    @StateObject var categoriesService = CategoriesService()
-    @State private var categories: [Category] = []
-    
-    @State private var isCreatingTransaction = false
-    
-    var filteredTransactions: [Transaction] {
-        transactions.filter { transaction in
-            if let category = categories.first(where: { $0.id == transaction.categoryId }) {
-                return category.isIncome == direction
-            }
-            return false
-        }
+    @StateObject var viewModel: TransactionsListViewModel
+
+    init(direction: Direction) {
+        _viewModel = StateObject(wrappedValue: TransactionsListViewModel(direction: direction))
     }
-    
-    var title: String {
-        direction == .income ? "Доходы сегодня" : "Расходы сегодня"
-    }
-    
-    var totalAmount: Decimal {
-        filteredTransactions.reduce(0) { $0 + $1.amount }
-    }
-    
+
     @ViewBuilder
     func totalAmountSection() -> some View {
         HStack {
             Text("Сумма")
             Spacer()
-            Text(amountFormatter(totalAmount))
+            Text(viewModel.amountFormatter(viewModel.totalAmount))
         }
     }
-    
-    func amountFormatter(_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
-        formatter.maximumFractionDigits = 2
-        return (formatter.string(for: amount) ?? "0") + " ₽"
-    }
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
-                VStack (alignment: .leading, spacing: 5 ){
+                VStack(alignment: .leading, spacing: 5) {
                     List {
                         Section {} header: {
-                            Text(title)
+                            Text(viewModel.title)
                                 .font(.system(size: 34, weight: .bold))
                                 .foregroundStyle(.black)
                                 .padding(.bottom, 12)
@@ -67,48 +38,29 @@ struct TransactionsListView: View {
                                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         }
                         totalAmountSection()
-                        
+
                         Section(header: Text("Операции")) {
-                            ForEach(filteredTransactions) { transaction in
-                                
-                                let category = categories.first(where: { $0.id == transaction.categoryId })
-                                
+                            ForEach(viewModel.filteredTransactions) { transaction in
+                                let category = viewModel.categories.first(where: { $0.id == transaction.categoryId })
+
                                 TransactionRow(
                                     transaction: transaction,
                                     category: category,
-                                    direction: direction,
-                                    amountFormatter: amountFormatter,
+                                    direction: viewModel.direction,
+                                    amountFormatter: viewModel.amountFormatter,
                                     style: .regular
                                 )
                             }
                         }
                     }
                     .listSectionSpacing(10)
-                    .background(Color(.systemGray6))
-                    
-                }
-                //.background(Color(.systemGray6))
-                .task {
-                    
-                    do {
-                        let today = transactionsService.todayInterval()
-                        transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
-                    } catch {
-                        
-                    }
-                    
-                    do {
-                        categories = try await categoriesService.allCategoriesList()
-                    } catch {
-                        
-                    }
                 }
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
                         Button(action: {
-                            isCreatingTransaction = true
+                            viewModel.isCreatingTransaction = true
                         }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 60, weight: .thin))
@@ -120,18 +72,30 @@ struct TransactionsListView: View {
                     .padding(.trailing, -2)
                 }
             }
-            .navigationDestination(isPresented: $isCreatingTransaction) {
+            .navigationDestination(isPresented: $viewModel.isCreatingTransaction) {
                 CreateTransactionView()
             }
-            //.background(Color(.systemGray6))
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: HistoryView(direction: direction)) {
+                NavigationLink(destination: HistoryView(direction: viewModel.direction)) {
                     Image(systemName: "clock")
                         .foregroundColor(.navigation)
                 }
             }
+        }
+        .task {
+            await viewModel.loadData()
+        }
+        .alert(isPresented: Binding<Bool>(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Alert(
+                title: Text("Ошибка"),
+                message: Text(viewModel.errorMessage ?? ""),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
@@ -141,7 +105,7 @@ enum TransactionRowStyle {
     case tall
 }
 
-// отображение транзакции (rawTall и raw)
+// отображение транзакции (с rawTall и raw)
 struct TransactionRow: View {
     let transaction: Transaction
     let category: Category?
@@ -164,19 +128,18 @@ struct TransactionRow: View {
                 Text(category?.name ?? "неизвестная категория")
                 
                 if let comment = transaction.comment {
-                    if style == .tall {
-                        Text(comment)
-                            .font(.system(size: 15))
-                            .foregroundColor(.gray)
-                    } else {
-                        Text(comment)
-                            .font(.system(size: 13))
-                            .foregroundColor(.gray)
-                    }
+                    Text(comment)
+                        .font(.system(size: style == .tall ? 15 : 13))
+                        .foregroundColor(.gray)
                 }
             }
             Spacer()
-            Text(amountFormatter(transaction.amount))
+            VStack (alignment: .trailing){
+                Text(amountFormatter(transaction.amount))
+                if style == .tall {
+                    Text(transaction.transactionDate, style: .time)
+                }
+            }
             Image(systemName: "chevron.right")
                 .foregroundColor(.gray)
                 .font(.caption)

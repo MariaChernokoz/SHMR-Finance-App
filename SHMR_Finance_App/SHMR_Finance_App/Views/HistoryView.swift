@@ -8,58 +8,16 @@
 import SwiftUI
 
 struct HistoryView: View {
-    @Environment(\.dismiss) private var dismiss
-    
     let direction: Direction
+    @StateObject var viewModel: HistoryViewModel
     
-    //месяц назад, 00:00
-    @State private var startDate: Date = Calendar.current.date(
-        byAdding: .month,
-        value: -1,
-        to: Calendar.current.startOfDay(for: Date())
-    ) ?? Calendar.current.startOfDay(for: Date())
-    
-    //сегодня, 23:59
-    @State private var endDate: Date = {
-        let today = Calendar.current.startOfDay(for: Date())
-        return Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: today) ?? Date()
-    }()
-    
-    @StateObject var transactionsService = TransactionsService()
-    @State private var transactions: [Transaction] = []
-    
-    @StateObject var categoriesService = CategoriesService()
-    @State private var categories: [Category] = []
-    
-    @State private var sortType: SortType = .date
-    
-    var filteredTransactions: [Transaction] {
-        let filtered = transactions.filter { transaction in
-            if let category = categories.first(where: { $0.id == transaction.categoryId }) {
-                return category.isIncome == direction
-            }
-            return false
-        }
-        switch sortType {
-        case .date:
-            return filtered.sorted { $0.transactionDate > $1.transactionDate }
-        case .amount:
-            return filtered.sorted { $0.amount > $1.amount }
-        }
+    init(direction: Direction) {
+        self.direction = direction
+        _viewModel = StateObject(wrappedValue: HistoryViewModel(direction: direction))
     }
     
-    var totalAmount: Decimal {
-        filteredTransactions.reduce(0) { $0 + $1.amount }
-    }
-    
-    func amountFormatter (_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
-        formatter.maximumFractionDigits = 2
-        return (formatter.string(for: amount) ?? "0") + " ₽"
-    }
-    
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             List {
@@ -71,29 +29,32 @@ struct HistoryView: View {
                         .textCase(nil)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    
                 }
-                
-                DatePickerRow(title: "Начало", date: $startDate)
-                DatePickerRow(title: "Конец", date: $endDate)
-                SortPickerRow(title: "Сортировка", sortType: $sortType)
-                
+
+                DatePickerRow(title: "Начало", date: $viewModel.startDate)
+                    .onChange(of: viewModel.startDate) {
+                            viewModel.applyStartDateFilter()
+                        }
+                DatePickerRow(title: "Конец", date: $viewModel.endDate)
+                    .onChange(of: viewModel.endDate) {
+                            viewModel.applyEndDateFilter()
+                        }
+                SortPickerRow(title: "Сортировка", sortType: $viewModel.sortType)
+
                 HStack {
                     Text("Сумма")
                     Spacer()
-                    Text(amountFormatter(totalAmount))
+                    Text(viewModel.amountFormatter(viewModel.totalAmount))
                 }
-                
+
                 Section(header: Text("Операции")) {
-                    ForEach(filteredTransactions) { transaction in
-                        
-                        let category = categories.first(where: { $0.id == transaction.categoryId })
-                        
+                    ForEach(viewModel.filteredTransactions) { transaction in
+                        let category = viewModel.categories.first(where: { $0.id == transaction.categoryId })
                         TransactionRow(
                             transaction: transaction,
                             category: category,
-                            direction: direction,
-                            amountFormatter: amountFormatter,
+                            direction: viewModel.direction,
+                            amountFormatter: viewModel.amountFormatter,
                             style: .tall
                         )
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
@@ -103,47 +64,6 @@ struct HistoryView: View {
             .listSectionSpacing(0)
             .scrollContentBackground(.hidden)
             .background(Color(.systemGray6))
-            .onChange(of: startDate) {
-                // время начала на 00:00:00
-                let correctedStartDate = Calendar.current.startOfDay(for: startDate)
-                if startDate != correctedStartDate {
-                    startDate = correctedStartDate
-                }
-
-                // если начало > конца, двигаем конец
-                if correctedStartDate > endDate {
-                    let endOfNewDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: correctedStartDate) ?? correctedStartDate
-                    endDate = endOfNewDay
-                }
-            }
-            .onChange(of: endDate) {
-                // время конца на 23:59:00
-                let startOfDay = Calendar.current.startOfDay(for: endDate)
-                let correctedEndDate = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: startOfDay) ?? endDate
-                if endDate != correctedEndDate {
-                    endDate = correctedEndDate
-                }
-
-                // если конец < начала, двигаем начало
-                if correctedEndDate < startDate {
-                    startDate = Calendar.current.startOfDay(for: correctedEndDate)
-                }
-            }
-            .task {
-                
-                do {
-                    let interval = DateInterval(start: startDate, end: endDate)
-                    transactions = try await transactionsService.getTransactionsOfPeriod(interval: interval)
-                } catch {
-                    
-                }
-                
-                do {
-                    categories = try await categoriesService.allCategoriesList()
-                } catch {
-                    
-                }
-            }
         }
         .tint(Color.accentColor)
         .navigationBarBackButtonHidden(true)
@@ -154,16 +74,29 @@ struct HistoryView: View {
                         .foregroundColor(.navigation)
                 }
             }
-            // back button
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     HStack {
                         Image(systemName: "chevron.backward")
-                        Text("Назад")
+                        Text(LocalizedStringKey("Back"))
+                        //Text("Назад")
                     }
                     .tint(.navigation)
                 }
             }
+        }
+        .task {
+            await viewModel.loadData()
+        }
+        .alert(isPresented: Binding<Bool>(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Alert(
+                title: Text("Ошибка"),
+                message: Text(viewModel.errorMessage ?? ""),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
