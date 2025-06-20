@@ -15,7 +15,7 @@ final class TransactionsService: ObservableObject {
             categoryId: 3,
             amount: Decimal(555.55),
             transactionDate: Date(),
-            comment: nil,
+            comment: "Бобик",
             createdAt: Date(),
             updatedAt: Date()
         ),
@@ -35,7 +35,7 @@ final class TransactionsService: ObservableObject {
             categoryId: 3,
             amount: Decimal(1200.00),
             transactionDate: Date(),
-            comment: "Ветеринар",
+            comment: "Бублик",
             createdAt: Date(),
             updatedAt: Date()
         ),
@@ -83,7 +83,7 @@ final class TransactionsService: ObservableObject {
             id: 8,
             accountId: 1,
             categoryId: 9,
-            amount: Decimal(100000.00),
+            amount: Decimal(180000.00),
             transactionDate: Date(),
             comment: nil,
             createdAt: Date(),

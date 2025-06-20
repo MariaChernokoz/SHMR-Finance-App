@@ -16,6 +16,8 @@ struct TransactionsListView: View {
     @StateObject var categoriesService = CategoriesService()
     @State private var categories: [Category] = []
     
+    @State private var isCreatingTransaction = false
+    
     var filteredTransactions: [Transaction] {
         transactions.filter { transaction in
             if let category = categories.first(where: { $0.id == transaction.categoryId }) {
@@ -30,89 +32,62 @@ struct TransactionsListView: View {
     }
     
     var totalAmount: Decimal {
-        var sum: Decimal = 0
-        for transaction in filteredTransactions {
-            sum += transaction.amount
+        filteredTransactions.reduce(0) { $0 + $1.amount }
+    }
+    
+    @ViewBuilder
+    func totalAmountSection() -> some View {
+        HStack {
+            Text("Сумма")
+            Spacer()
+            Text(amountFormatter(totalAmount))
         }
-        return sum
     }
     
-    func amountFormatter (_ amount: Decimal) -> String {
+    func amountFormatter(_ amount: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.groupingSeparator = " "
         formatter.maximumFractionDigits = 2
-        return (formatter.string(for: totalAmount) ?? "0") + " ₽"
-    }
-    
-    var totalAmountString: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
-        formatter.maximumFractionDigits = 2
-        return (formatter.string(for: totalAmount) ?? "0") + " ₽"
+        return (formatter.string(for: amount) ?? "0") + " ₽"
     }
     
     var body: some View {
         NavigationStack {
             ZStack {
                 VStack (alignment: .leading, spacing: 5 ){
-                    Text(title)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                    
                     List {
-                        HStack{
-                            Text("Всего")
-                            Spacer()
-                            Text(amountFormatter(totalAmount))
-                                .foregroundColor(.gray)
+                        Section {} header: {
+                            Text(title)
+                                .font(.system(size: 34, weight: .bold))
+                                .foregroundStyle(.black)
+                                .padding(.bottom, 12)
+                                .textCase(nil)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         }
+                        totalAmountSection()
                         
                         Section(header: Text("Операции")) {
                             ForEach(filteredTransactions) { transaction in
                                 
                                 let category = categories.first(where: { $0.id == transaction.categoryId })
                                 
-                                // * можно вынести отдельно ? *
-                                HStack {
-                                    // * сделать чтобы эмодзи не отображались в доходах *
-                                    if direction == .outcome {
-                                        Circle()
-                                            .fill(Color.accentColor.opacity(0.2))
-                                            .frame(width: 22, height: 22)
-                                            .overlay(Text(String(category?.emoji ?? "❓"))
-                                                .font(.system(size: 12))
-                                            )
-                                            .padding(.trailing, 8)
-                                    }
-                                    VStack(alignment: .leading, spacing: 0) {
-                                        Text(category?.name ?? "неизвестная категория")
-                                        
-                                        if let comment = transaction.comment {
-                                            Text(comment)
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        }
-                                    }
-                                    
-                                    Spacer()
-                                    Text("\(transaction.amount) ₽")
-                                    // сделать красивое отображение amount для операций
-                                    //Text(amountFormatter(transaction.amount))
-                                        .fontWeight(.medium)
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
-                                        .font(.caption)
-                                }
+                                TransactionRow(
+                                    transaction: transaction,
+                                    category: category,
+                                    direction: direction,
+                                    amountFormatter: amountFormatter,
+                                    style: .regular
+                                )
                             }
                         }
                     }
                     .listSectionSpacing(10)
+                    .background(Color(.systemGray6))
                     
                 }
-                .background(Color(.systemGray6))
+                //.background(Color(.systemGray6))
                 .task {
                     
                     do {
@@ -128,27 +103,88 @@ struct TransactionsListView: View {
                         
                     }
                 }
-                NavigationLink(destination: CreateTransactionView()) {
+                VStack {
                     Spacer()
-                    VStack(alignment: .leading) {
+                    HStack {
                         Spacer()
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 56, weight: .thin))
-                            .foregroundColor(.accentColor)
-                            .padding(.horizontal)
-                            .padding(.vertical)
+                        Button(action: {
+                            isCreatingTransaction = true
+                        }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 60, weight: .thin))
+                                .foregroundColor(.accentColor)
+                                .padding()
+                        }
                     }
+                    .padding(.bottom, 8)
+                    .padding(.trailing, -2)
                 }
             }
+            .navigationDestination(isPresented: $isCreatingTransaction) {
+                CreateTransactionView()
+            }
+            //.background(Color(.systemGray6))
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: HistoryView(direction: direction)) {
                     Image(systemName: "clock")
-                        .foregroundColor(.purple)
+                        .foregroundColor(.navigation)
                 }
             }
         }
+    }
+}
+
+enum TransactionRowStyle {
+    case regular
+    case tall
+}
+
+// отображение транзакции (rawTall и raw)
+struct TransactionRow: View {
+    let transaction: Transaction
+    let category: Category?
+    let direction: Direction
+    let amountFormatter: (Decimal) -> String
+    var style: TransactionRowStyle
+
+    var body: some View {
+        let rowContent = HStack {
+            if direction == .outcome {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.2))
+                    .frame(width: 22, height: 22)
+                    .overlay(Text(String(category?.emoji ?? "❓"))
+                        .font(.system(size: 12))
+                    )
+                    .padding(.trailing, 8)
+            }
+            VStack(alignment: .leading, spacing: style == .tall ? 3 : 0) {
+                Text(category?.name ?? "неизвестная категория")
+                
+                if let comment = transaction.comment {
+                    if style == .tall {
+                        Text(comment)
+                            .font(.system(size: 15))
+                            .foregroundColor(.gray)
+                    } else {
+                        Text(comment)
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            Spacer()
+            Text(amountFormatter(transaction.amount))
+            Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
+                .font(.caption)
+        }
+        if style == .tall {
+            rowContent
+                .frame(height: 40)
+        } else { rowContent }
     }
 }
 

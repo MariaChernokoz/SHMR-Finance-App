@@ -20,53 +20,43 @@ struct TabBarView: View {
             }
             .tint(Color.accentColor)
             .tabItem {
-                Image(systemName: "chart.bar.xaxis")
-                Text("Расходы")
+                Label("Расходы", image: "outcomeTabBarButton")
             }
-            .padding(.bottom, 8)
             
             NavigationStack {
                 TransactionsListView(direction: .income)
             }
             .tint(Color.accentColor)
             .tabItem {
-                Image(systemName: "chart.bar.xaxis.ascending")
-                Text("Доходы")
+                Label("Доходы", image: "incomeTabBarButton")
             }
-            .padding(.bottom, 8)
                 
             NavigationStack {
                 AccountView()
             }
             .tint(Color.purple)
             .tabItem {
-                Image(systemName: "person.crop.circle")
-                Text("Счет")
+                Label("Счет", image: "accountTabBarButton")
             }
-            .padding(.bottom, 8)
             
             NavigationStack {
                 CategoriesView()
             }
             .tint(Color.purple)
             .tabItem {
-                Image(systemName: "chart.bar.horizontal.page")
-                Text("Статьи")
+                Label("Статьи", image: "categoriesTabBarButton")
             }
-            .padding(.bottom, 8)
             
             NavigationStack {
                 SettingsView()
             }
             .tint(Color.purple)
             .tabItem {
-                Image(systemName: "gearshape.fill")
-                Text("Настройки")
+                Label("Настройки", image: "settingsTabBarButton")
             }
-            .padding(.bottom, 8)
         }
         .tint(Color.accentColor)
-        .padding(.bottom, 12)
+        .padding(.bottom, 8)
     }
 }
 

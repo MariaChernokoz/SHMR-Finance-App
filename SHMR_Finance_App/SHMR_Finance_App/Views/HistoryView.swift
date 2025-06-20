@@ -31,14 +31,7 @@ struct HistoryView: View {
     @StateObject var categoriesService = CategoriesService()
     @State private var categories: [Category] = []
     
-    var filteredTransactionss: [Transaction] {
-        transactions.filter { transaction in
-            if let category = categories.first(where: { $0.id == transaction.categoryId }) {
-                return category.isIncome == direction
-            }
-            return false
-        }
-    }
+    @State private var sortType: SortType = .date
     
     var filteredTransactions: [Transaction] {
         let filtered = transactions.filter { transaction in
@@ -56,157 +49,86 @@ struct HistoryView: View {
     }
     
     var totalAmount: Decimal {
-        var sum: Decimal = 0
-        for transaction in filteredTransactions {
-            sum += transaction.amount
-        }
-        return sum
+        filteredTransactions.reduce(0) { $0 + $1.amount }
     }
     
-    var totalAmountString: String {
+    func amountFormatter (_ amount: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.groupingSeparator = " "
         formatter.maximumFractionDigits = 2
-        return (formatter.string(for: totalAmount) ?? "0") + " ₽"
+        return (formatter.string(for: amount) ?? "0") + " ₽"
     }
-    
-    enum SortType: String, CaseIterable, Identifiable {
-        case date = "По дате"
-        case amount = "По сумме"
-        var id: String { self.rawValue }
-    }
-
-    @State private var sortType: SortType = .date
-    
     
     var body: some View {
         NavigationStack {
-            
-            VStack (alignment: .leading, spacing: 5 ){ 
+            List {
+                Section {} header: {
+                    Text("Моя история")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(.black)
+                        .padding(.bottom, 9)
+                        .textCase(nil)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    
+                }
                 
-                List {
-                    Section {} header: {
-                        Text("Моя история")
-                            .font(.system(size: 34, weight: .bold))
-                            .foregroundStyle(.black)
-                            .padding(.bottom, 9)
-                            .textCase(nil)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                DatePickerRow(title: "Начало", date: $startDate)
+                DatePickerRow(title: "Конец", date: $endDate)
+                SortPickerRow(title: "Сортировка", sortType: $sortType)
+                
+                HStack {
+                    Text("Сумма")
+                    Spacer()
+                    Text(amountFormatter(totalAmount))
+                }
+                
+                Section(header: Text("Операции")) {
+                    ForEach(filteredTransactions) { transaction in
                         
-                    }
-                    
-                    HStack {
-                        Text("Начало")
-                        Spacer()
-                        HStack {
-                            Text(startDate.formatted(.dateTime.day().month().year()))
-                        }
-                        .padding(.horizontal, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .foregroundColor(.accentColor)
-                                .opacity(0.2)
-                                .padding(.vertical, -7))
+                        let category = categories.first(where: { $0.id == transaction.categoryId })
                         
-                        .overlay {
-                            DatePicker(selection: $startDate, displayedComponents: .date) {}
-                                .labelsHidden()
-                                .colorMultiply(.clear)
-                        }
-                    }
-                    
-                    HStack {
-                        Text("Конец")
-                        Spacer()
-                        HStack {
-                            Text(endDate.formatted(.dateTime.day().month().year()))
-                        }
-                        .padding(.horizontal, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .foregroundColor(.accentColor)
-                                .opacity(0.2)
-                                .padding(.vertical, -7))
-                        
-                        .overlay {
-                            DatePicker(selection: $endDate, displayedComponents: .date) {}
-                                .labelsHidden()
-                                .colorMultiply(.clear)
-                        }
-                    }
-                    
-                    HStack {
-                        Text("Сортировка")
-                        Spacer()
-                        ZStack {
-                            Text(sortType.rawValue)
-                                .font(.system(size: 17, weight: .regular))
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 15)
-                                .padding(.vertical, 7)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(Color.accentColor)
-                                        .opacity(0.2)
-                                )
-                            Picker("", selection: $sortType) {
-                                ForEach(SortType.allCases) { type in
-                                    Text(type.rawValue).tag(type)
-                                }
-                            }
-                            .labelsHidden()
-                            .blendMode(.destinationOver)
-                            .contentShape(Rectangle())
-                        }
-                    }
-                    HStack {
-                        Text("Сумма")
-                        Spacer()
-                        Text(totalAmountString)
-                    }
-                    
-                    Section(header: Text("Операции")) {
-                        ForEach(filteredTransactions) { transaction in
-                            
-                            let category = categories.first(where: { $0.id == transaction.categoryId })
-                            
-                            // * можно вынести в отдельную функцию *
-                            HStack {
-                                // * сделать чтобы эмодзи не отображались в доходах *
-                                if direction == .outcome {
-                                    Circle()
-                                        .fill(Color.accentColor.opacity(0.2))
-                                        .frame(width: 22, height: 22)
-                                        .overlay(Text(String(category?.emoji ?? "❓"))
-                                            .font(.system(size: 12))
-                                        )
-                                        .padding(.trailing, 8)
-                                }
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(category?.name ?? "Категория \(transaction.categoryId)")
-                                        .fontWeight(.medium)
-                                    if let comment = transaction.comment {
-                                        Text(comment)
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                                
-                                Spacer()
-                                Text("\(transaction.amount) ₽")
-                                    .fontWeight(.medium)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
-                                    .font(.caption)
-                            }
-                        }
+                        TransactionRow(
+                            transaction: transaction,
+                            category: category,
+                            direction: direction,
+                            amountFormatter: amountFormatter,
+                            style: .tall
+                        )
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     }
                 }
-                .listSectionSpacing(0)
             }
+            .listSectionSpacing(0)
+            .scrollContentBackground(.hidden)
             .background(Color(.systemGray6))
+            .onChange(of: startDate) {
+                // время начала на 00:00:00
+                let correctedStartDate = Calendar.current.startOfDay(for: startDate)
+                if startDate != correctedStartDate {
+                    startDate = correctedStartDate
+                }
+
+                // если начало > конца, двигаем конец
+                if correctedStartDate > endDate {
+                    let endOfNewDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: correctedStartDate) ?? correctedStartDate
+                    endDate = endOfNewDay
+                }
+            }
+            .onChange(of: endDate) {
+                // время конца на 23:59:00
+                let startOfDay = Calendar.current.startOfDay(for: endDate)
+                let correctedEndDate = Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: startOfDay) ?? endDate
+                if endDate != correctedEndDate {
+                    endDate = correctedEndDate
+                }
+
+                // если конец < начала, двигаем начало
+                if correctedEndDate < startDate {
+                    startDate = Calendar.current.startOfDay(for: correctedEndDate)
+                }
+            }
             .task {
                 
                 do {
@@ -223,25 +145,89 @@ struct HistoryView: View {
                 }
             }
         }
+        .tint(Color.accentColor)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: AnalysisView()) {
                     Image(systemName: "document")
-                        .foregroundColor(.purple)
+                        .foregroundColor(.navigation)
                 }
             }
-        }
-        .tint(Color.accentColor)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
+            // back button
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     HStack {
                         Image(systemName: "chevron.backward")
                         Text("Назад")
                     }
-                    .tint(Color.purple)
+                    .tint(.navigation)
                 }
+            }
+        }
+    }
+}
+
+struct DatePickerRow: View {
+    let title: String
+    @Binding var date: Date
+    
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            HStack {
+                Text(date.formatted(.dateTime.day().month().year()))
+            }
+            .padding(.horizontal, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .foregroundColor(.accentColor)
+                    .opacity(0.2)
+                    .padding(.vertical, -7)
+            )
+            .overlay {
+                DatePicker(selection: $date, displayedComponents: .date) {}
+                    .labelsHidden()
+                    .colorMultiply(.clear)
+            }
+        }
+    }
+}
+
+enum SortType: String, CaseIterable, Identifiable {
+    case date = "По дате"
+    case amount = "По сумме"
+    var id: String { self.rawValue }
+}
+
+struct SortPickerRow: View {
+    let title: String
+    @Binding var sortType: SortType
+    
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            ZStack {
+                Text(sortType.rawValue)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 15)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.accentColor)
+                            .opacity(0.2)
+                    )
+                Picker("", selection: $sortType) {
+                    ForEach(SortType.allCases) { type in
+                        Text(type.rawValue).tag(type)
+                    }
+                }
+                .labelsHidden()
+                .blendMode(.destinationOver)
+                .contentShape(Rectangle())
             }
         }
     }
