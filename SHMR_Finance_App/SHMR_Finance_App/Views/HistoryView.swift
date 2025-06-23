@@ -88,16 +88,7 @@ struct HistoryView: View {
         .task {
             await viewModel.loadData()
         }
-        .alert(isPresented: Binding<Bool>(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Alert(
-                title: Text("Ошибка"),
-                message: Text(viewModel.errorMessage ?? ""),
-                dismissButton: .default(Text("OK"))
-            )
-        }
+        .errorAlert(errorMessage: $viewModel.errorMessage)
     }
 }
 

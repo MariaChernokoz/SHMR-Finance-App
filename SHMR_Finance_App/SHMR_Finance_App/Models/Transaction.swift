@@ -123,7 +123,7 @@ extension Transaction {
     static func parse(csv: String) -> [Transaction] {
 
         let lines = csv.components(separatedBy: .newlines)
-
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         return lines.compactMap { parse(csvLine: $0) }
     }
 }

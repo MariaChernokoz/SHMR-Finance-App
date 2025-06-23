@@ -75,28 +75,19 @@ struct TransactionsListView: View {
             .navigationDestination(isPresented: $viewModel.isCreatingTransaction) {
                 CreateTransactionView()
             }
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: HistoryView(direction: viewModel.direction)) {
-                    Image(systemName: "clock")
-                        .foregroundColor(.navigation)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: HistoryView(direction: viewModel.direction)) {
+                        Image(systemName: "clock")
+                            .foregroundColor(.navigation)
+                    }
                 }
             }
         }
         .task {
             await viewModel.loadData()
         }
-        .alert(isPresented: Binding<Bool>(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Alert(
-                title: Text("Ошибка"),
-                message: Text(viewModel.errorMessage ?? ""),
-                dismissButton: .default(Text("OK"))
-            )
-        }
+        .errorAlert(errorMessage: $viewModel.errorMessage)
     }
 }
 

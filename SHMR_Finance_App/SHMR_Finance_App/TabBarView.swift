@@ -15,47 +15,31 @@ struct TabBarView: View {
     
     var body: some View {
         TabView {
-            NavigationStack {
+            Group {
                 TransactionsListView(direction: .outcome)
-            }
-            .tabItem {
-                Label("Расходы", image: "outcomeTabBarButton")
-            }
-            .toolbarBackground(.visible, for: .tabBar)
-            .toolbarBackground(Color.white, for: .tabBar)
-            
-            NavigationStack {
-                TransactionsListView(direction: .income)
-            }
-            .tabItem {
-                Label("Доходы", image: "incomeTabBarButton")
-            }
-            .toolbarBackground(.visible, for: .tabBar)
-            .toolbarBackground(Color.white, for: .tabBar)
+                .tabItem {
+                    Label("Расходы", image: "outcomeTabBarButton")
+                }
                 
-            NavigationStack {
+                TransactionsListView(direction: .income)
+                .tabItem {
+                    Label("Доходы", image: "incomeTabBarButton")
+                }
+                
                 AccountView()
-            }
-            .tabItem {
-                Label("Счет", image: "accountTabBarButton")
-            }
-            .toolbarBackground(.visible, for: .tabBar)
-            .toolbarBackground(Color.white, for: .tabBar)
-            
-            NavigationStack {
+                .tabItem {
+                    Label("Счет", image: "accountTabBarButton")
+                }
+                
                 CategoriesView()
-            }
-            .tabItem {
-                Label("Статьи", image: "categoriesTabBarButton")
-            }
-            .toolbarBackground(.visible, for: .tabBar)
-            .toolbarBackground(Color.white, for: .tabBar)
-            
-            NavigationStack {
+                .tabItem {
+                    Label("Статьи", image: "categoriesTabBarButton")
+                }
+                
                 SettingsView()
-            }
-            .tabItem {
-                Label("Настройки", image: "settingsTabBarButton")
+                .tabItem {
+                    Label("Настройки", image: "settingsTabBarButton")
+                }
             }
             .toolbarBackground(.visible, for: .tabBar)
             .toolbarBackground(Color.white, for: .tabBar)

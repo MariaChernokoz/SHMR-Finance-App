@@ -53,13 +53,10 @@ class TransactionsListViewModel: ObservableObject {
     func loadData() async {
         do {
             let today = transactionsService.todayInterval()
-            transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        do {
-            categories = try await categoriesService.allCategoriesList()
+            async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: today)
+            async let categoriesTask = categoriesService.allCategoriesList()
+            transactions = try await transactionsTask
+            categories = try await categoriesTask
         } catch {
             errorMessage = error.localizedDescription
         }

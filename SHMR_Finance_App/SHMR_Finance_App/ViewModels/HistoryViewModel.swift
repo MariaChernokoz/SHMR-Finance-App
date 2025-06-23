@@ -52,8 +52,10 @@ class HistoryViewModel: ObservableObject {
     func loadData() async {
         do {
             let interval = DateInterval(start: startDate, end: endDate)
-            transactions = try await transactionsService.getTransactionsOfPeriod(interval: interval)
-            categories = try await categoriesService.allCategoriesList()
+            async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: interval)
+            async let categoriesTask = categoriesService.allCategoriesList()
+            transactions = try await transactionsTask
+            categories = try await categoriesTask
             filterTransactions()
         } catch {
             errorMessage = error.localizedDescription
