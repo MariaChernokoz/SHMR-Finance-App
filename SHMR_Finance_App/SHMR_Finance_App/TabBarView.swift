@@ -27,8 +27,6 @@ struct TabBarView: View {
                 .tabItem {
                     Label("Счет", image: "accountTabBarButton")
                 }
-                //.ignoresSafeArea(.keyboard, edges: .bottom)
-                //.tint(Color.navigation)
                 
                 CategoriesView()
                 .tabItem {
@@ -41,11 +39,9 @@ struct TabBarView: View {
                 }
             }
             .toolbarBackground(.visible, for: .tabBar)
-            .toolbarBackground(Color.white, for: .tabBar)
-            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .toolbarBackground(.background, for: .tabBar)
         }
         .tint(Color.accentColor)
-        .padding(.bottom, 8)
     }
 }
 

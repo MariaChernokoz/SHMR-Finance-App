@@ -15,7 +15,7 @@ struct SpoilerView: UIViewRepresentable {
 
         let emitterCell = CAEmitterCell()
         emitterCell.contents = makeWhiteDotImage()?.cgImage
-        emitterCell.color = UIColor.black.cgColor
+        emitterCell.color = UIColor.systemBackground.cgColor
         emitterCell.contentsScale = 1.8
         emitterCell.emissionRange = .pi * 2
         emitterCell.lifetime = 1
@@ -60,6 +60,7 @@ struct SpoilerView: UIViewRepresentable {
                         .opacity(isOn ? 0 : 1)
                     SpoilerView(isOn: isOn)
                         .frame(width: 60, height: 20)
+                        .background(.black)
                 }
                 Button(isOn ? "Показать текст" : "Скрыть текст") {
                     isOn.toggle()

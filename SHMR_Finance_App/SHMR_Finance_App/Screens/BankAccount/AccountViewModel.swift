@@ -57,17 +57,16 @@ class AccountViewModel: ObservableObject {
         }
     }
     
-    /*
-    func updateBalance(_ newBalance: Decimal) async {
-        guard var account = bankAccount else { return }
-        account.balance = newBalance
-        do{
-            try await bankAccountService.updateAccount(account)
-            bankAccount = account
-        }catch{
-            errorMessage = error.localizedDescription
+    func formattedBalance(_ balance: Decimal) -> String {
+        let doubleValue = NSDecimalNumber(decimal: balance).doubleValue
+        if doubleValue.truncatingRemainder(dividingBy: 1) == 0 {
+            // Целое число
+            return String(format: "%.0f", doubleValue)
+        } else {
+            // С копейками
+            return String(format: "%.2f", doubleValue)
         }
-    }*/
+    }
 }
 
 
