@@ -61,6 +61,6 @@ struct BalanceSectionView: View {
                 }
             }
         }
-        .listRowBackground(isEditing ? Color.white : Color.accentColor)
+        .listRowBackground(isEditing ? Color.white : Color("AccentColor"))
     }
 }

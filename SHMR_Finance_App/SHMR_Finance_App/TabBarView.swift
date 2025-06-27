@@ -27,6 +27,7 @@ struct TabBarView: View {
                 .tabItem {
                     Label("Счет", image: "accountTabBarButton")
                 }
+                .tint(Color.navigation)
                 
                 CategoriesView()
                 .tabItem {

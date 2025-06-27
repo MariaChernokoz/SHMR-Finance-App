@@ -52,7 +52,7 @@ struct CurrencySectionView: View {
                 }
             }
         }
-        .listRowBackground(isEditing ? Color.white : Color.accentColor.opacity(0.2))
+        .listRowBackground(isEditing ? Color.white : Color("AccentColor").opacity(0.2))
     }
 
     private func currencySymbol(for code: String) -> String {
