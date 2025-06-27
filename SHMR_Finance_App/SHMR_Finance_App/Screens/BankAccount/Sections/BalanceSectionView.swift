@@ -52,9 +52,7 @@ struct BalanceSectionView: View {
                         }
                 } else {
                     if isBalanceHidden {
-                        Text(
-                            viewModel.bankAccount.map { viewModel.formattedBalance($0.balance) } ?? ""
-                        )
+                        Text(viewModel.bankAccount?.balance.formatted(.number.precision(.fractionLength(2))) ?? "-")
                             .spoiler(isOn: $isBalanceHidden)
                     } else {
                         Text(viewModel.bankAccount?.balance.formatted(.number.precision(.fractionLength(2))) ?? "-")
