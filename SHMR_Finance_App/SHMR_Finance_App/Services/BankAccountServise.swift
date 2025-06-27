@@ -14,7 +14,7 @@ final class BankAccountsService {
             id: 1,
             userId: 1,
             name: "Основной счёт",
-            balance: 365.99,
+            balance: 1000.00,
             currency: "RUB",
             createdAt: Date(),
             updatedAt: Date()

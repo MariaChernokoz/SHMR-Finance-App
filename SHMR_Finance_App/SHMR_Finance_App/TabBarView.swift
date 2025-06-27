@@ -8,10 +8,7 @@
 import SwiftUI
 
 struct TabBarView: View {
-    init() {
-        UITabBar.appearance().backgroundColor = UIColor.white
-        UITabBar.appearance().unselectedItemTintColor = UIColor.gray
-    }
+    
     
     var body: some View {
         TabView {
@@ -30,6 +27,7 @@ struct TabBarView: View {
                 .tabItem {
                     Label("Счет", image: "accountTabBarButton")
                 }
+                .tint(Color.navigation)
                 
                 CategoriesView()
                 .tabItem {
@@ -42,10 +40,9 @@ struct TabBarView: View {
                 }
             }
             .toolbarBackground(.visible, for: .tabBar)
-            .toolbarBackground(Color.white, for: .tabBar)
+            .toolbarBackground(.background, for: .tabBar)
         }
         .tint(Color.accentColor)
-        .padding(.bottom, 8)
     }
 }
 

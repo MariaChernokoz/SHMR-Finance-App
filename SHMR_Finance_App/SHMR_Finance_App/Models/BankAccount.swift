@@ -7,12 +7,20 @@
 
 import Foundation
 
-struct BankAccount: Codable {
+struct BankAccount: Codable, Identifiable {
     let id: Int
     let userId: Int
     let name: String
     var balance: Decimal
-    let currency: String
+    var currency: String
     let createdAt: Date
     let updatedAt: Date
 }
+
+enum Currency: String {
+    case RUB = "₽"
+    case USD = "$"
+    case EUR = "€"
+}
+
+
