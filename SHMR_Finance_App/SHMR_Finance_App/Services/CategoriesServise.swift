@@ -60,19 +60,19 @@ final class CategoriesService: ObservableObject {
         Category(
             id: 9,
             name: "Зарплата",
-            emoji: "💊",
+            emoji: "🤑",
             isIncome: .income
         ),
         Category(
             id: 10,
             name: "Подработка",
-            emoji: "🚗",
+            emoji: "💸",
             isIncome: .income
         ),
         Category(
             id: 11,
             name: "Подарок",
-            emoji: "🚗",
+            emoji: "🎁",
             isIncome: .income
         )
     ]
