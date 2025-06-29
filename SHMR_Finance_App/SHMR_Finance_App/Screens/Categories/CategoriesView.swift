@@ -23,18 +23,23 @@ struct CategoriesView: View {
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 40, leading: 0, bottom: 10, trailing: 0))
                         }
+                        
                         //секция поиска
                         Section {
-                            Text("поиск")
+                            SearchBar(text: $viewModel.searchText)
+                                .listRowInsets(EdgeInsets())
+                                .listRowBackground(Color.clear)
                         }
                         
+                        //отображение статей
                         Section(header: Text("Статьи")) {
-                            ForEach(viewModel.categories) { category in
+                            ForEach(viewModel.filteredCategories) { category in
                                 CategoriesRow(category: category)
                             }
                         }
                     }
                     .listSectionSpacing(0)
+                    //.searchable(text: $viewModel.searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
                 }
             }
         }
@@ -63,6 +68,36 @@ struct CategoriesRow: View {
                 Text(category?.name ?? "неизвестная категория")
             }
         }
+    }
+}
+
+struct SearchBar: View {
+    @Binding var text: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(Color(.systemGray))
+            ZStack(alignment: .leading) {
+                    if text.isEmpty {
+                        Text("Search")
+                            .foregroundColor(Color(.systemGray)) // более светло-серый
+                    }
+                    TextField("", text: $text)
+                        .foregroundColor(.primary)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                }
+            Button(action: {
+                //микрофон
+            }) {
+                Image(systemName: "microphone.fill")
+                    .foregroundColor(Color(.systemGray))
+            }
+        }
+        .padding(8)
+        .background(Color(.systemGray5))
+        .cornerRadius(10)
     }
 }
 

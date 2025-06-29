@@ -12,6 +12,15 @@ class CategoriesViewModel: ObservableObject {
     
     @Published var categories: [Category] = []
     @Published var errorMessage: String? = nil
+    @Published var searchText: String = ""
+
+    var filteredCategories: [Category] {
+        if searchText.isEmpty {
+            return categories
+        } else {
+            return categories.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
 
     private let categoriesService = CategoriesService()
 
