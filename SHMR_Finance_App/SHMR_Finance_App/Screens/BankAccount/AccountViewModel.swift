@@ -56,17 +56,6 @@ class AccountViewModel: ObservableObject {
             }
         }
     }
-    
-    func formattedBalance(_ balance: Decimal) -> String {
-        let doubleValue = NSDecimalNumber(decimal: balance).doubleValue
-        if doubleValue.truncatingRemainder(dividingBy: 1) == 0 {
-            // Целое число
-            return String(format: "%.0f", doubleValue)
-        } else {
-            // С копейками
-            return String(format: "%.2f", doubleValue)
-        }
-    }
 }
 
 

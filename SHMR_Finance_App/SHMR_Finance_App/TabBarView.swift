@@ -14,30 +14,30 @@ struct TabBarView: View {
         TabView {
             Group {
                 TransactionsListView(direction: .outcome)
-                .tabItem {
-                    Label("Расходы", image: "outcomeTabBarButton")
-                }
+                    .tabItem {
+                        Label("Расходы", image: "outcomeTabBarButton")
+                    }
                 
                 TransactionsListView(direction: .income)
-                .tabItem {
-                    Label("Доходы", image: "incomeTabBarButton")
-                }
+                    .tabItem {
+                        Label("Доходы", image: "incomeTabBarButton")
+                    }
                 
                 AccountView()
-                .tabItem {
-                    Label("Счет", image: "accountTabBarButton")
-                }
-                .tint(Color.navigation)
+                    .tabItem {
+                        Label("Счет", image: "accountTabBarButton")
+                    }
+                    .tint(Color.navigation)
                 
-                CategoriesView()
-                .tabItem {
-                    Label("Статьи", image: "categoriesTabBarButton")
-                }
+                CategoriesView(viewModel: CategoriesViewModel())
+                    .tabItem {
+                        Label("Статьи", image: "categoriesTabBarButton")
+                    }
                 
                 SettingsView()
-                .tabItem {
-                    Label("Настройки", image: "settingsTabBarButton")
-                }
+                    .tabItem {
+                        Label("Настройки", image: "settingsTabBarButton")
+                    }
             }
             .toolbarBackground(.visible, for: .tabBar)
             .toolbarBackground(.background, for: .tabBar)
