@@ -6,3 +6,14 @@
 //
 
 import Foundation
+import SwiftUI
+
+struct AmountTextRow: View {
+    let amount: Decimal
+    let color: Color
+
+    var body: some View {
+        Text(amount.formattedAmount + " ₽")
+            .foregroundColor(color)
+    }
+}

@@ -17,11 +17,13 @@ struct TabBarView: View {
                     .tabItem {
                         Label("Расходы", image: "outcomeTabBarButton")
                     }
+                    //.tint(Color.navigation)
                 
                 TransactionsListView(direction: .income)
                     .tabItem {
                         Label("Доходы", image: "incomeTabBarButton")
                     }
+                    //.tint(Color.navigation)
                 
                 AccountView()
                     .tabItem {

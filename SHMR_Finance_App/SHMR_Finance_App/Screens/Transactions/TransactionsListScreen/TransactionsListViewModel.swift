@@ -38,6 +38,11 @@ class TransactionsListViewModel: ObservableObject {
     var totalAmount: Decimal {
         filteredTransactions.reduce(0) { $0 + $1.amount }
     }
+    
+    var accountId: Int {
+        // если у тебя один счет, можно захардкодить, либо получить из BankAccountService
+        1
+    }
 
     func amountFormatter(_ amount: Decimal) -> String {
         let formatter = NumberFormatter()

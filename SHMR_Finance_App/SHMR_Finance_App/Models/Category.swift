@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Category: Identifiable {
+struct Category: Identifiable, Hashable {
     let id: Int
     let name: String
     let emoji: Character
@@ -17,4 +17,11 @@ struct Category: Identifiable {
 enum Direction: String, Codable {
     case income
     case outcome
+}
+
+struct CategorySummary {
+    let category: Category
+    let totalAmount: Decimal
+    let percentage: Int
+    let transactions: [Transaction]
 }

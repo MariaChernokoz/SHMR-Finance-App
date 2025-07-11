@@ -10,10 +10,16 @@ import SwiftUI
 struct HistoryView: View {
     let direction: Direction
     @StateObject var viewModel: HistoryViewModel
+    private var analysisViewModel: AnalysisViewModel
     
     init(direction: Direction) {
         self.direction = direction
         _viewModel = StateObject(wrappedValue: HistoryViewModel(direction: direction))
+    }
+    
+    init(viewModel: MyHistoryViewModel, analysisViewModel: AnalysisViewModel) {
+        self.viewModel = viewModel
+        self.analysisViewModel = analysisViewModel
     }
     
     @Environment(\.dismiss) private var dismiss
@@ -69,7 +75,14 @@ struct HistoryView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: AnalysisView()) {
+                NavigationLink {
+                    AnalysisView()
+                    AnalysisViewControllerWrapper(
+                        viewModel: analysisViewModel
+                    )
+                    .navigationBarBackButtonHidden(true)
+                    .ignoresSafeArea()
+                } label: {
                     Image(systemName: "document")
                         .foregroundColor(.navigation)
                 }
@@ -91,7 +104,7 @@ struct HistoryView: View {
         .errorAlert(errorMessage: $viewModel.errorMessage)
     }
 }
-
+ /*
 struct DatePickerRow: View {
     let title: String
     @Binding var date: Date
@@ -106,7 +119,7 @@ struct DatePickerRow: View {
             .padding(.horizontal, 12)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(Color("AccentColor"))
                     .opacity(0.2)
                     .padding(.vertical, -7)
             )
@@ -117,8 +130,9 @@ struct DatePickerRow: View {
             }
         }
     }
-}
+} */
 
+/*
 enum SortType: String, CaseIterable, Identifiable {
     case date = "По дате"
     case amount = "По сумме"
@@ -141,7 +155,7 @@ struct SortPickerRow: View {
                     .padding(.vertical, 7)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color.accentColor)
+                            .fill(Color("AccentColor"))
                             .opacity(0.2)
                     )
                 Picker("", selection: $sortType) {
@@ -155,7 +169,7 @@ struct SortPickerRow: View {
             }
         }
     }
-}
+} */
 
 #Preview {
     HistoryView(direction: .outcome)
