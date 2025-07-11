@@ -18,10 +18,3 @@ enum Direction: String, Codable {
     case income
     case outcome
 }
-
-struct CategorySummary {
-    let category: Category
-    let totalAmount: Decimal
-    let percentage: Int
-    let transactions: [Transaction]
-}

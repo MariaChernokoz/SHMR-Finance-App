@@ -29,12 +29,6 @@ extension Double {
 //    }
 //}
 
-//extension Decimal {
-//    var formattedAmount: String {
-//        Formatter.amount.string(for: self) ?? "0"
-//    }
-//}
-
 extension Decimal {
     var formattedAmount: String {
         let formatter = NumberFormatter()
