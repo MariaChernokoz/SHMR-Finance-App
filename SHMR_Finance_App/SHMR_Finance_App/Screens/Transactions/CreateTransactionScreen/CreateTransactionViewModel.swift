@@ -50,17 +50,14 @@ final class CreateTransactionViewModel: ObservableObject {
     }
 
     func save(onSave: @escaping () -> Void) {
-        //отладка валидации
-        print("selectedCategory:", selectedCategory as Any)
-        print("amount:", amount)
-        print("amountDecimal:", Decimal(string: amount.replacingOccurrences(of: ",", with: ".")) as Any)
+        let cleanedAmount = amount.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: ",", with: ".")
+        let amountDecimal = Decimal(string: cleanedAmount)
         guard let selectedCategory = selectedCategory,
-              let amountDecimal = Decimal(string: amount.replacingOccurrences(of: ",", with: ".")),
-              !amount.isEmpty,
+              let amountDecimal = amountDecimal,
               amountDecimal > 0,
               let transaction = transactionToEdit
         else {
-            showAlert = true
+            Task { @MainActor in showAlert = true }
             return
         }
         isLoading = true
@@ -91,20 +88,17 @@ final class CreateTransactionViewModel: ObservableObject {
     }
 
     func create(onSave: @escaping () -> Void) {
-        //отладка валидации
-        print("selectedCategory:", selectedCategory as Any)
-        print("amount:", amount)
-        print("amountDecimal:", Decimal(string: amount.replacingOccurrences(of: ",", with: ".")) as Any)
+        let cleanedAmount = amount.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: ",", with: ".")
+        let amountDecimal = Decimal(string: cleanedAmount)
         guard let selectedCategory = selectedCategory,
-              let amountDecimal = Decimal(string: amount.replacingOccurrences(of: ",", with: ".")),
-              !amount.isEmpty,
+              let amountDecimal = amountDecimal,
               amountDecimal > 0
         else {
-            showAlert = true
+            Task { @MainActor in showAlert = true }
             return
         }
         isLoading = true
-        let newId = (transactions.map { $0.id }.max() ?? 0) + 1
+        let newId = TransactionsService.shared.nextTransactionId()
         let newTransaction = Transaction(
             id: newId,
             accountId: mainAccountId,

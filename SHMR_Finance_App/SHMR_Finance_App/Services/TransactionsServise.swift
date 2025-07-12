@@ -164,6 +164,10 @@ final class TransactionsService: ObservableObject {
             throw TransactionServiceError.transactionNotFound
         }
     }
+    
+    func nextTransactionId() -> Int {
+        (mockTransactions.map { $0.id }.max() ?? 0) + 1
+    }
 }
 
 enum TransactionServiceError: Error, LocalizedError {
