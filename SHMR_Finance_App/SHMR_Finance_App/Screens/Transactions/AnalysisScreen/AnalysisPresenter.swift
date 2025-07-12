@@ -115,7 +115,7 @@ extension AnalysisPresenter: UITableViewDataSource {
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCellNames.configCell, for: indexPath) as! ConfigCell
             if indexPath.row == 0 {
-                cell.configure(title: "Начало", date: firstDate, change: .first) { newDate, change in
+                cell.configure(title: "Период: начало", date: firstDate, change: .first) { newDate, change in
                     self.firstDate = newDate
                     self.lastDateChanged = change
                     Task {
@@ -123,7 +123,7 @@ extension AnalysisPresenter: UITableViewDataSource {
                     }
                 }
             } else if indexPath.row == 1 {
-                cell.configure(title: "Конец", date: secondDate, change: .second) { newDate, change in
+                cell.configure(title: "Период: конец", date: secondDate, change: .second) { newDate, change in
                     self.secondDate = newDate
                     self.lastDateChanged = change
                     Task {

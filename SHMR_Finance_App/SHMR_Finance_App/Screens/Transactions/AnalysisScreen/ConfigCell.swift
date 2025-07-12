@@ -19,13 +19,7 @@ class ConfigCell: UITableViewCell {
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         return datePicker
     }()
-//    private lazy var sortButton: UIButton = {
-//        let button = UIButton()
-//        button.setTitle("Сортировать", for: .normal)
-//        button.setTitleColor(.accent, for: .normal)
-//        button.addTarget(self, action: #selector(sortButtonTapped), for: .touchUpInside)
-//        return button
-//    }()
+    
     private lazy var sortButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("По дате", for: .normal)
@@ -35,6 +29,7 @@ class ConfigCell: UITableViewCell {
         button.showsMenuAsPrimaryAction = true
         return button
     }()
+    
     
     private var dateChangeType: DateChanged?
     
@@ -74,6 +69,7 @@ class ConfigCell: UITableViewCell {
             sortButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             sortButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
         ])
+    
     }
 
     func configure(title: String, date: Date, change: DateChanged, onChange: @escaping (Date, DateChanged) -> Void) {
@@ -84,22 +80,6 @@ class ConfigCell: UITableViewCell {
         self.dateChangeType = change
         self.onDateChanged = onChange
     }
-    
-//    func configureAsButtonCell(onSortSelected: @escaping (SortType) -> Void) {
-//        resetCell()
-//        sortButton.isHidden = false
-//        self.onSortSelected = onSortSelected
-//        
-//        sortButton.menu = UIMenu(title: "Сортировка", children: [
-//            UIAction(title: "По дате") { [weak self] _ in
-//                self?.onSortSelected?(.date)
-//            },
-//            UIAction(title: "По сумме") { [weak self] _ in
-//                self?.onSortSelected?(.amount)
-//            }
-//        ])
-//        sortButton.showsMenuAsPrimaryAction = true
-//    }
     
     func configureAsButtonCell(currentSort: SortType, onSortSelected: @escaping (SortType) -> Void) {
         resetCell()
