@@ -8,6 +8,8 @@
 import Foundation
 
 final class CategoriesService: ObservableObject {
+    static let shared = CategoriesService()
+    
     @Published private var mockCategories: [Category] = [
         Category(
             id: 1,
@@ -76,6 +78,8 @@ final class CategoriesService: ObservableObject {
             isIncome: .income
         )
     ]
+    
+    private init() {}
     
     func allCategoriesList() async throws -> [Category] {
         

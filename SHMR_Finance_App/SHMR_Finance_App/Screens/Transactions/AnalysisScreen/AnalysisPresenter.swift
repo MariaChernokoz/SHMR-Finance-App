@@ -11,7 +11,7 @@ import UIKit
 final class AnalysisPresenter: NSObject {
     
     weak var viewController: AnalysisViewController?
-    let transactionsService = TransactionsService()
+    let transactionsService = TransactionsService.shared
     
     var firstDate = Calendar.current.date(byAdding: .month, value: -1, to: Date())!
     var secondDate = Date.now

@@ -4,16 +4,13 @@ struct CreateTransactionView: View {
     @StateObject var viewModel: CreateTransactionViewModel
     let onSave: (() -> Void)? // callback для закрытия/обновления списка после создания/редактирования
 
-    @State private var amount: String = ""
-    @State private var date: Date = Date()
-    @State private var selectedCategory: Category? = nil
-    @State private var comment: String = ""
     @State private var showAlert = false
     @State private var isLoading = false
     
     @FocusState private var isAmountFocused: Bool
     @State private var showDatePicker = false
     @State private var showTimePicker = false
+    @FocusState private var isCommentFocused: Bool
 
     var filteredCategories: [Category] {
         viewModel.categories.filter { $0.isIncome == viewModel.direction }
@@ -28,20 +25,18 @@ struct CreateTransactionView: View {
         viewModel.direction == .income ? "Удалить доход" : "Удалить расход"
     }
     
-    @FocusState private var isCommentFocused: Bool
-    
     // Форматтеры для даты и времени
     var formattedDate: String {
         let df = DateFormatter()
         df.locale = Locale(identifier: "ru_RU")
         df.dateFormat = "d MMMM"
-        return df.string(from: date)
+        return df.string(from: viewModel.date)
     }
     var formattedTime: String {
         let tf = DateFormatter()
         tf.locale = Locale(identifier: "ru_RU")
         tf.dateFormat = "HH:mm"
-        return tf.string(from: date)
+        return tf.string(from: viewModel.date)
     }
 
     var body: some View {
@@ -70,7 +65,6 @@ struct CreateTransactionView: View {
                                 .font(.system(size: 15))
                                 .foregroundColor(.gray)
                         }
-                        //.frame(height: 44)
                         Picker("", selection: $viewModel.selectedCategory) {
                             ForEach(viewModel.filteredCategories) { category in
                                 Text(category.name).tag(Optional(category))
@@ -80,27 +74,23 @@ struct CreateTransactionView: View {
                         .opacity(0) // Picker невидимый, но кликабельный
                         .contentShape(Rectangle())
                     }
-                    //.frame(height: 24)
                 }
-                //.frame(height: 44)
                 
                 // Сумма
                 HStack {
                     Text("Сумма")
                     Spacer()
                     ZStack(alignment: .trailing) {
-                        if amount.isEmpty {
+                        if viewModel.amount.isEmpty {
                             Text("0 ₽")
                                 .foregroundColor(.gray)
                         } else {
-                            //Text(formattedAmount)
-                              //  .foregroundColor(.gray)
-                            let amountDecimal = Decimal(string: amount.replacingOccurrences(of: ",", with: ".")) ?? 0
+                            let amountDecimal = Decimal(string: viewModel.amount.replacingOccurrences(of: ",", with: ".")) ?? 0
                             Text(amountDecimal.formattedAmount + " ₽")
                                 .foregroundColor(.gray)
                         }
                         EditAmountField(
-                            amount: $amount,
+                            amount: $viewModel.amount,
                             isFocused: $isAmountFocused,
                             placeholder: "",
                             textColor: .clear,
@@ -112,7 +102,7 @@ struct CreateTransactionView: View {
                 .onTapGesture { isAmountFocused = true }
                 
                 // Дата и время
-                DatePickerRow(title: "Дата", date: $date)
+                DatePickerRow(title: "Дата", date: $viewModel.date)
                 TimePickerRow(title: "Время", date: $viewModel.date)
 
                 // Комментарий
@@ -131,13 +121,12 @@ struct CreateTransactionView: View {
                             })
                         }
                         .foregroundColor(.red)
-                        .disabled(isLoading)
+                        .disabled(viewModel.isLoading)
                     }
                 }
                 .listSectionSpacing(50)
             }
             .scrollDismissesKeyboard(.immediately)
-            //.tint(.navigation)
             .listStyle(.insetGrouped)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -149,7 +138,6 @@ struct CreateTransactionView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEdit ? "Сохранить" : "Создать") {
-                        //viewModel.saveOrCreate(onSave: onSave ?? {})
                         if isEdit {
                             viewModel.save(onSave: onSave ?? {})
                         } else {
@@ -161,16 +149,8 @@ struct CreateTransactionView: View {
                     .disabled(viewModel.isLoading)
                 }
             }
-            .alert(isPresented: $showAlert) {
+            .alert(isPresented: $viewModel.showAlert) {
                 Alert(title: Text("Ошибка"), message: Text("Пожалуйста, заполните все поля корректно"), dismissButton: .default(Text("Ок")))
-            }
-            .onAppear {
-                if let transaction = viewModel.transactionToEdit {
-                    amount = "\(transaction.amount)"
-                    date = transaction.transactionDate
-                    selectedCategory = viewModel.categories.first(where: { $0.id == transaction.categoryId })
-                    comment = transaction.comment ?? ""
-                }
             }
             .task {
                 await viewModel.loadAccount()

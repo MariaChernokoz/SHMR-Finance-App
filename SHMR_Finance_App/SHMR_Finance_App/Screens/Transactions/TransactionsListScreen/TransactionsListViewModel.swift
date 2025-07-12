@@ -15,8 +15,8 @@ class TransactionsListViewModel: ObservableObject {
 
     let direction: Direction
 
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
+    private let transactionsService = TransactionsService.shared
+    private let categoriesService = CategoriesService.shared
 
     init(direction: Direction) {
         self.direction = direction

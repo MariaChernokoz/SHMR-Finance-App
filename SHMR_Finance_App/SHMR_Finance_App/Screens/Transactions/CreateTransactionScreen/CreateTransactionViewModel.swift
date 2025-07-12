@@ -15,7 +15,6 @@ final class CreateTransactionViewModel: ObservableObject {
     @Published var comment: String = ""
     @Published var isLoading = false
     @Published var showAlert = false
-    //@Published var mainAccount: BankAccount?
 
     let direction: Direction
     var mainAccountId: Int
@@ -58,6 +57,7 @@ final class CreateTransactionViewModel: ObservableObject {
         guard let selectedCategory = selectedCategory,
               let amountDecimal = Decimal(string: amount.replacingOccurrences(of: ",", with: ".")),
               !amount.isEmpty,
+              amountDecimal > 0,
               let transaction = transactionToEdit
         else {
             showAlert = true
@@ -76,12 +76,16 @@ final class CreateTransactionViewModel: ObservableObject {
         )
         Task {
             do {
-                try await TransactionsService().updateTransaction(updatedTransaction)
-                isLoading = false
-                onSave()
+                try await TransactionsService.shared.updateTransaction(updatedTransaction)
+                await MainActor.run {
+                    isLoading = false
+                    onSave()
+                }
             } catch {
-                isLoading = false
-                showAlert = true
+                await MainActor.run {
+                    isLoading = false
+                    showAlert = true
+                }
             }
         }
     }
@@ -93,7 +97,8 @@ final class CreateTransactionViewModel: ObservableObject {
         print("amountDecimal:", Decimal(string: amount.replacingOccurrences(of: ",", with: ".")) as Any)
         guard let selectedCategory = selectedCategory,
               let amountDecimal = Decimal(string: amount.replacingOccurrences(of: ",", with: ".")),
-              !amount.isEmpty
+              !amount.isEmpty,
+              amountDecimal > 0
         else {
             showAlert = true
             return
@@ -112,86 +117,35 @@ final class CreateTransactionViewModel: ObservableObject {
         )
         Task {
             do {
-                try await TransactionsService().createTransaction(newTransaction)
-                isLoading = false
-                onSave()
+                try await TransactionsService.shared.createTransaction(newTransaction)
+                await MainActor.run {
+                    isLoading = false
+                    onSave()
+                }
             } catch {
-                isLoading = false
-                showAlert = true
+                await MainActor.run {
+                    isLoading = false
+                    showAlert = true
+                }
             }
         }
     }
-    
-//    func saveOrCreate(onSave: @escaping () -> Void) {
-//        guard let selectedCategory = selectedCategory,
-//              let amountDecimal = Decimal(string: amount.replacingOccurrences(of: ",", with: ".")),
-//              !amount.isEmpty
-//        else {
-//            showAlert = true
-//            return
-//        }
-//
-//        isLoading = true
-//
-//        if isEdit, let transaction = transactionToEdit {
-//            // Редактирование
-//            let updatedTransaction = Transaction(
-//                id: transaction.id,
-//                accountId: transaction.accountId,
-//                categoryId: selectedCategory.id,
-//                amount: amountDecimal,
-//                transactionDate: date,
-//                comment: comment,
-//                createdAt: transaction.createdAt,
-//                updatedAt: Date()
-//            )
-//            Task {
-//                do {
-//                    try await TransactionsService().updateTransaction(updatedTransaction)
-//                    isLoading = false
-//                    onSave()
-//                } catch {
-//                    isLoading = false
-//                    showAlert = true
-//                }
-//            }
-//        } else {
-//            // Создание
-//            let newId = (transactions.map { $0.id }.max() ?? 0) + 1
-//            let newTransaction = Transaction(
-//                id: newId,
-//                accountId: mainAccountId,
-//                categoryId: selectedCategory.id,
-//                amount: amountDecimal,
-//                transactionDate: date,
-//                comment: comment,
-//                createdAt: Date(),
-//                updatedAt: Date()
-//            )
-//            Task {
-//                do {
-//                    try await TransactionsService().createTransaction(newTransaction)
-//                    isLoading = false
-//                    onSave()
-//                } catch {
-//                    isLoading = false
-//                    showAlert = true
-//                }
-//            }
-//        }
-//    }
     
     func delete(onDelete: @escaping () -> Void) {
         guard let transaction = transactionToEdit else { return }
         isLoading = true
         Task {
             do {
-                try await TransactionsService().deleteTransaction(transactionId: transaction.id)
-                isLoading = false
-                onDelete()
+                try await TransactionsService.shared.deleteTransaction(transactionId: transaction.id)
+                await MainActor.run {
+                    isLoading = false
+                    onDelete()
+                }
             } catch {
-                isLoading = false
-                showAlert = true
+                await MainActor.run {
+                    isLoading = false
+                    showAlert = true
+                }
             }
         }
     }
@@ -201,7 +155,6 @@ final class CreateTransactionViewModel: ObservableObject {
             let account = try await BankAccountsService().getAccount()
             DispatchQueue.main.async {
                 self.mainAccountId = account.id
-                //self.accountCurrency = account.currency
             }
         } catch {
             // обработка ошибки

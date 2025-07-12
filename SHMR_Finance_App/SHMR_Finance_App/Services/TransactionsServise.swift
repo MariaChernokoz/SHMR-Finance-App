@@ -8,7 +8,9 @@
 import Foundation
 
 final class TransactionsService: ObservableObject {
-     @Published private var mockTransactions: [Transaction] = [
+    static let shared = TransactionsService()
+    
+    @Published private var mockTransactions: [Transaction] = [
         Transaction(
             id: 1,
             accountId: 1,
@@ -121,6 +123,8 @@ final class TransactionsService: ObservableObject {
         )
         
     ]
+    
+    private init() {}
     
     func todayInterval() -> DateInterval {
         let startOfDay = Calendar.current.startOfDay(for: Date())
