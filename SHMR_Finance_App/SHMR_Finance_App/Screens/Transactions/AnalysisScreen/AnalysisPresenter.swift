@@ -8,7 +8,8 @@
 import Foundation
 import UIKit
 
-final class AnalysisPresenter: NSObject {
+@MainActor
+class AnalysisPresenter: NSObject {
     
     weak var viewController: AnalysisViewController?
     let transactionsService = TransactionsService.shared
@@ -77,12 +78,13 @@ final class AnalysisPresenter: NSObject {
             DispatchQueue.main.async {
                 self.transactions = filteredTransactions
                 self.chosenPeriodSum = sum
+                self.sort(by: self.sortType)
             }
         } catch {
             print("Ошибка загрузки: \(error)")
         }
         
-        await viewController?.tableView.reloadData()
+        viewController?.tableView.reloadData()
     }
     
     func sort(by parameter: SortType) {
@@ -131,13 +133,12 @@ extension AnalysisPresenter: UITableViewDataSource {
                     }
                 }
             } else if indexPath.row == 2 {
-                //cell.configure(title: "сортировка", value: )
                 cell.configureAsButtonCell(currentSort: self.sortType) { [weak self] sortType in
                     self?.sortType = sortType
                     self?.sort(by: sortType)
                 }
             } else {
-                cell.configure(title: "Сумма", value: chosenPeriodSum.formattedAmount)
+                cell.configure(title: "Сумма", value: chosenPeriodSum.formattedAmount + " ₽")
             }
             return cell
             

@@ -42,7 +42,7 @@ final class CreateTransactionViewModel: ObservableObject {
         self.transactionToEdit = transactionToEdit
 
         if let transaction = transactionToEdit {
-            self.amount = transaction.amount.formattedAmount
+            self.amount = transaction.amount.description
             self.date = transaction.transactionDate
             self.selectedCategory = categories.first(where: { $0.id == transaction.categoryId })
             self.comment = transaction.comment ?? ""
@@ -144,12 +144,11 @@ final class CreateTransactionViewModel: ObservableObject {
         }
     }
     
+    @MainActor
     func loadAccount() async {
         do {
             let account = try await BankAccountsService().getAccount()
-            DispatchQueue.main.async {
-                self.mainAccountId = account.id
-            }
+            self.mainAccountId = account.id
         } catch {
             // обработка ошибки
         }

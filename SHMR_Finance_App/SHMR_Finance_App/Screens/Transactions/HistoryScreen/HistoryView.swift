@@ -68,9 +68,7 @@ struct HistoryView: View {
         .listSectionSpacing(0)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGray6))
-        //.background(Color(.systemGray6)).ignoresSafeArea()
     }
-        
 
     var body: some View {
         NavigationStack {
@@ -90,7 +88,6 @@ struct HistoryView: View {
                     HStack {
                         Image(systemName: "chevron.backward")
                         Text(LocalizedStringKey("Back"))
-                        //Text("Назад")
                     }
                     .tint(.navigation)
                 }

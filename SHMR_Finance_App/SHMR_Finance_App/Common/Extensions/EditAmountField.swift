@@ -21,7 +21,7 @@ struct EditAmountField: View {
             .foregroundColor(textColor)
             .multilineTextAlignment(alignment)
             //фильтровать невалидные символы
-            .onChange(of: amount) { newValue in
+            .onChange(of: amount) { oldValue, newValue in
                 // Оставляем только цифры, запятую, точку и пробелы
                 var filtered = newValue.filter { "0123456789, .".contains($0) }
                 // Заменяем точку на запятую для единообразия
