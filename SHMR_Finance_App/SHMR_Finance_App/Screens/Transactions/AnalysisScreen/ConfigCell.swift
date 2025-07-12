@@ -15,15 +15,24 @@ class ConfigCell: UITableViewCell {
         let datePicker = UIDatePicker()
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .compact
-        datePicker.backgroundColor = .accent
+        datePicker.backgroundColor = UIColor.accent.withAlphaComponent(0.2)
         datePicker.addTarget(self, action: #selector(dateChanged), for: .valueChanged)
         return datePicker
     }()
+//    private lazy var sortButton: UIButton = {
+//        let button = UIButton()
+//        button.setTitle("Сортировать", for: .normal)
+//        button.setTitleColor(.accent, for: .normal)
+//        button.addTarget(self, action: #selector(sortButtonTapped), for: .touchUpInside)
+//        return button
+//    }()
     private lazy var sortButton: UIButton = {
-        let button = UIButton()
-        button.setTitle("Сортировать", for: .normal)
+        let button = UIButton(type: .system)
+        button.setTitle("По дате", for: .normal)
         button.setTitleColor(.accent, for: .normal)
-        button.addTarget(self, action: #selector(sortButtonTapped), for: .touchUpInside)
+        button.backgroundColor = UIColor.accent.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 8
+        button.showsMenuAsPrimaryAction = true
         return button
     }()
     
@@ -41,8 +50,6 @@ class ConfigCell: UITableViewCell {
     required init?(coder: NSCoder) {
         fatalError()
     }
-    
-    // MARK: - Methods
     
     private func resetCell() {
         [titleLabel, valueLabel, datePicker, sortButton].forEach { $0.isHidden = true }
@@ -78,20 +85,38 @@ class ConfigCell: UITableViewCell {
         self.onDateChanged = onChange
     }
     
-    func configureAsButtonCell(onSortSelected: @escaping (SortType) -> Void) {
+//    func configureAsButtonCell(onSortSelected: @escaping (SortType) -> Void) {
+//        resetCell()
+//        sortButton.isHidden = false
+//        self.onSortSelected = onSortSelected
+//        
+//        sortButton.menu = UIMenu(title: "Сортировка", children: [
+//            UIAction(title: "По дате") { [weak self] _ in
+//                self?.onSortSelected?(.date)
+//            },
+//            UIAction(title: "По сумме") { [weak self] _ in
+//                self?.onSortSelected?(.amount)
+//            }
+//        ])
+//        sortButton.showsMenuAsPrimaryAction = true
+//    }
+    
+    func configureAsButtonCell(currentSort: SortType, onSortSelected: @escaping (SortType) -> Void) {
         resetCell()
         sortButton.isHidden = false
         self.onSortSelected = onSortSelected
-        
-        sortButton.menu = UIMenu(title: "Сортировка", children: [
-            UIAction(title: "По дате") { [weak self] _ in
+
+        let menu = UIMenu(options: .displayInline, children: [
+            UIAction(title: "По дате", state: currentSort == .date ? .on : .off) { [weak self] _ in
                 self?.onSortSelected?(.date)
+                self?.sortButton.setTitle("По дате", for: .normal)
             },
-            UIAction(title: "По сумме") { [weak self] _ in
+            UIAction(title: "По сумме", state: currentSort == .amount ? .on : .off) { [weak self] _ in
                 self?.onSortSelected?(.amount)
+                self?.sortButton.setTitle("По сумме", for: .normal)
             }
         ])
-        sortButton.showsMenuAsPrimaryAction = true
+        sortButton.menu = menu
     }
 
     func configure(title: String, value: String) {

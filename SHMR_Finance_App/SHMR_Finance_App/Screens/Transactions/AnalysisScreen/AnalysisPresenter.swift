@@ -17,6 +17,7 @@ final class AnalysisPresenter: NSObject {
     var secondDate = Date.now
     var lastDateChanged: DateChanged = .first
     var chosenPeriodSum: Decimal = 0
+    var sortType: SortType = .date
     
     private(set) var transactions: [Transaction] = []
     let categories: [Category]
@@ -27,8 +28,6 @@ final class AnalysisPresenter: NSObject {
         self.direction = direction
         self.categories = categories
     }
-    
-    // MARK: - Methods
     
     func viewDidLoad() {
         Task {
@@ -98,7 +97,6 @@ final class AnalysisPresenter: NSObject {
     }
 }
 
-    // MARK: - UITableViewDataSource
 
 extension AnalysisPresenter: UITableViewDataSource {
     
@@ -117,7 +115,7 @@ extension AnalysisPresenter: UITableViewDataSource {
         if indexPath.section == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCellNames.configCell, for: indexPath) as! ConfigCell
             if indexPath.row == 0 {
-                cell.configure(title: "Период: начало", date: firstDate, change: .first) { newDate, change in
+                cell.configure(title: "Начало", date: firstDate, change: .first) { newDate, change in
                     self.firstDate = newDate
                     self.lastDateChanged = change
                     Task {
@@ -125,7 +123,7 @@ extension AnalysisPresenter: UITableViewDataSource {
                     }
                 }
             } else if indexPath.row == 1 {
-                cell.configure(title: "Период: конец", date: secondDate, change: .second) { newDate, change in
+                cell.configure(title: "Конец", date: secondDate, change: .second) { newDate, change in
                     self.secondDate = newDate
                     self.lastDateChanged = change
                     Task {
@@ -133,7 +131,9 @@ extension AnalysisPresenter: UITableViewDataSource {
                     }
                 }
             } else if indexPath.row == 2 {
-                cell.configureAsButtonCell { [weak self] sortType in
+                //cell.configure(title: "сортировка", value: )
+                cell.configureAsButtonCell(currentSort: self.sortType) { [weak self] sortType in
+                    self?.sortType = sortType
                     self?.sort(by: sortType)
                 }
             } else {
@@ -146,7 +146,7 @@ extension AnalysisPresenter: UITableViewDataSource {
             cell.selectionStyle = .none
             cell.backgroundColor = .clear
             let label = UILabel()
-            label.text = "Здесь когда-то будет график ._."
+            label.text = "круговая диаграмма"
             label.translatesAutoresizingMaskIntoConstraints = false
             cell.addSubview(label)
             NSLayoutConstraint.activate([
@@ -168,7 +168,6 @@ extension AnalysisPresenter: UITableViewDataSource {
     }
 }
 
-    // MARK: - UITableViewDelegate
 
 extension AnalysisPresenter: UITableViewDelegate {
     

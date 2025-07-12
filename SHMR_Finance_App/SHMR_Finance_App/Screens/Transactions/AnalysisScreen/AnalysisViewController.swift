@@ -32,33 +32,29 @@ class AnalysisViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - viewDidLoad
-
     override func viewDidLoad() {
         super.viewDidLoad()
         
         presenter = AnalysisPresenter(direction: direction, categories: categories)
-        
-        title = "Анализ"
-        view.backgroundColor = .systemGroupedBackground
+
+        view.backgroundColor = UIColor.clear
+        tableView.backgroundColor = UIColor.systemGray6
         
         presenter?.attach(viewController: self)
         setupTableView()
         presenter?.viewDidLoad()
     }
     
-    // MARK: - viewWillAppear
-    
     override func viewWillAppear(_ animated: Bool) {
+        
         self.parent?.navigationItem.title = "Анализ"
         
+        self.parent?.navigationController?.navigationBar.isTranslucent = true
         self.parent?.navigationController?.navigationBar.prefersLargeTitles = true
         self.parent?.navigationItem.largeTitleDisplayMode = .always
-        self.parent?.navigationController?.navigationBar.backgroundColor = .systemBackground
+        self.parent?.navigationController?.navigationBar.backgroundColor = .clear
         
     }
-    
-    // MARK: - Methods
     
     private func setupTableView() {
         view.addSubview(tableView)

@@ -68,6 +68,7 @@ struct HistoryView: View {
         .listSectionSpacing(0)
         .scrollContentBackground(.hidden)
         .background(Color(.systemGray6))
+        //.background(Color(.systemGray6)).ignoresSafeArea()
     }
         
 

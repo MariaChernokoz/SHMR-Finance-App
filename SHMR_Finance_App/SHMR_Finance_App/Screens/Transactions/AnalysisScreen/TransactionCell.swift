@@ -13,7 +13,7 @@ class TransactionCell: UITableViewCell {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14)
         label.textAlignment = .center
-        label.backgroundColor = .accent
+        label.backgroundColor = UIColor.accent.withAlphaComponent(0.2)
         label.layer.cornerRadius = 12
         label.clipsToBounds = true
         label.translatesAutoresizingMaskIntoConstraints = false
