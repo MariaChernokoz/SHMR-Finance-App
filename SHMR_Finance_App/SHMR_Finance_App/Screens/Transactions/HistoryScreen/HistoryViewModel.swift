@@ -43,8 +43,8 @@ class HistoryViewModel: ObservableObject {
     }
     @Published var filteredTransactions: [Transaction] = []
 
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
+    private let transactionsService = TransactionsService.shared
+    private let categoriesService = CategoriesService.shared
     
     @Published var errorMessage: String? = nil
 

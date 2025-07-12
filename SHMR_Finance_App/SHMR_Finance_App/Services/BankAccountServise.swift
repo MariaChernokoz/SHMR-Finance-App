@@ -15,7 +15,7 @@ final class BankAccountsService {
             userId: 1,
             name: "Основной счёт",
             balance: 1000.00,
-            currency: "RUB",
+            currency: "USD", //"RUB", //MARK: добавить учет валюты в отображении транзакций
             createdAt: Date(),
             updatedAt: Date()
         ),

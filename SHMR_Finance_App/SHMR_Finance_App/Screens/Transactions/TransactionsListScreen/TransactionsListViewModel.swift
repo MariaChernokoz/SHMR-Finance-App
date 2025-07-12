@@ -15,8 +15,8 @@ class TransactionsListViewModel: ObservableObject {
 
     let direction: Direction
 
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
+    private let transactionsService = TransactionsService.shared
+    private let categoriesService = CategoriesService.shared
 
     init(direction: Direction) {
         self.direction = direction
@@ -37,6 +37,11 @@ class TransactionsListViewModel: ObservableObject {
 
     var totalAmount: Decimal {
         filteredTransactions.reduce(0) { $0 + $1.amount }
+    }
+    
+    var accountId: Int {
+        // если у тебя один счет, можно захардкодить, либо получить из BankAccountService
+        1
     }
 
     func amountFormatter(_ amount: Decimal) -> String {

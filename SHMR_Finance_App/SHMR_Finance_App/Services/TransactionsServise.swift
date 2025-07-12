@@ -8,7 +8,9 @@
 import Foundation
 
 final class TransactionsService: ObservableObject {
-     @Published private var mockTransactions: [Transaction] = [
+    static let shared = TransactionsService()
+    
+    @Published private var mockTransactions: [Transaction] = [
         Transaction(
             id: 1,
             accountId: 1,
@@ -122,6 +124,8 @@ final class TransactionsService: ObservableObject {
         
     ]
     
+    private init() {}
+    
     func todayInterval() -> DateInterval {
         let startOfDay = Calendar.current.startOfDay(for: Date())
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
@@ -159,6 +163,10 @@ final class TransactionsService: ObservableObject {
         if mockTransactions.count == initialCount {
             throw TransactionServiceError.transactionNotFound
         }
+    }
+    
+    func nextTransactionId() -> Int {
+        (mockTransactions.map { $0.id }.max() ?? 0) + 1
     }
 }
 

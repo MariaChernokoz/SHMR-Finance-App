@@ -44,7 +44,7 @@ class CategoriesViewModel: ObservableObject {
         return dp[a.count][b.count]
     }
 
-    private let categoriesService = CategoriesService()
+    private let categoriesService = CategoriesService.shared
 
     @MainActor
     func loadData() async {

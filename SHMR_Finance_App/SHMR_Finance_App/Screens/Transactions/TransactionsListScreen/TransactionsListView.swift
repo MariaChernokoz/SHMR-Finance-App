@@ -19,7 +19,43 @@ struct TransactionsListView: View {
         HStack {
             Text("Сумма")
             Spacer()
-            Text(viewModel.amountFormatter(viewModel.totalAmount))
+            //MARK: сумма операции 1
+            AmountTextRow(amount: viewModel.totalAmount, color: .primary)
+            //Text(viewModel.amountFormatter(viewModel.totalAmount))
+        }
+    }
+    
+    @State private var showCreateTransaction = false
+    @State private var editingTransaction: Transaction? = nil
+    
+    private var titleSection: some View {
+        Section {} header: {
+            Text(viewModel.title)
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(.black)
+                .padding(.bottom, 12)
+                .textCase(nil)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+        }
+    }
+    
+    private var operationsSection: some View {
+        Section(header: Text("Операции")) {
+            ForEach(viewModel.filteredTransactions) { transaction in
+                let category = viewModel.categories.first(where: { $0.id == transaction.categoryId })
+
+                TransactionRow(
+                    transaction: transaction,
+                    category: category,
+                    direction: viewModel.direction,
+                    amountFormatter: viewModel.amountFormatter,
+                    style: .regular
+                )
+                .onTapGesture {
+                    editingTransaction = transaction
+                }
+            }
         }
     }
 
@@ -28,30 +64,9 @@ struct TransactionsListView: View {
             ZStack {
                 VStack(alignment: .leading, spacing: 5) {
                     List {
-                        Section {} header: {
-                            Text(viewModel.title)
-                                .font(.system(size: 34, weight: .bold))
-                                .foregroundStyle(.black)
-                                .padding(.bottom, 12)
-                                .textCase(nil)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        }
+                        titleSection
                         totalAmountSection()
-
-                        Section(header: Text("Операции")) {
-                            ForEach(viewModel.filteredTransactions) { transaction in
-                                let category = viewModel.categories.first(where: { $0.id == transaction.categoryId })
-
-                                TransactionRow(
-                                    transaction: transaction,
-                                    category: category,
-                                    direction: viewModel.direction,
-                                    amountFormatter: viewModel.amountFormatter,
-                                    style: .regular
-                                )
-                            }
-                        }
+                        operationsSection
                     }
                     .listSectionSpacing(10)
                 }
@@ -60,11 +75,12 @@ struct TransactionsListView: View {
                     HStack {
                         Spacer()
                         Button(action: {
-                            viewModel.isCreatingTransaction = true
+                            //viewModel.isCreatingTransaction = true
+                            showCreateTransaction = true
                         }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 60, weight: .thin))
-                                .foregroundColor(.accentColor)
+                                .foregroundColor(Color("AccentColor"))
                                 .padding()
                         }
                     }
@@ -72,8 +88,41 @@ struct TransactionsListView: View {
                     .padding(.trailing, -2)
                 }
             }
-            .navigationDestination(isPresented: $viewModel.isCreatingTransaction) {
-                CreateTransactionView()
+            // Отображать экран модально: 
+            // создание
+            .fullScreenCover(isPresented: $showCreateTransaction) {
+                CreateTransactionView(
+                    viewModel: CreateTransactionViewModel(
+                        direction: viewModel.direction,
+                        mainAccountId: viewModel.accountId,
+                        categories: viewModel.categories,
+                        transactions: viewModel.transactions
+                    ),
+                    onSave: {
+                        showCreateTransaction = false
+                        Task {
+                            await viewModel.loadData()
+                        }
+                    }
+                )
+            }
+            // редактирование
+            .fullScreenCover(item: $editingTransaction) { transaction in
+                CreateTransactionView(
+                    viewModel: CreateTransactionViewModel(
+                        direction: viewModel.direction,
+                        mainAccountId: viewModel.accountId,
+                        categories: viewModel.categories,
+                        transactions: viewModel.transactions,
+                        transactionToEdit: transaction
+                    ),
+                    onSave: {
+                        editingTransaction = nil
+                        Task {
+                            await viewModel.loadData()
+                        }
+                    }
+                )
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -108,7 +157,7 @@ struct TransactionRow: View {
         let rowContent = HStack {
             if direction == .outcome {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.2))
+                    .fill(Color("AccentColor").opacity(0.2))
                     .frame(width: 22, height: 22)
                     .overlay(Text(String(category?.emoji ?? "❓"))
                         .font(.system(size: 12))
@@ -126,7 +175,10 @@ struct TransactionRow: View {
             }
             Spacer()
             VStack (alignment: .trailing){
-                Text(amountFormatter(transaction.amount))
+                //MARK: сумма операции 2
+                //Text(amountFormatter(transaction.amount))
+                //Text(transaction.amount.formattedAmount + " ₽")
+                AmountTextRow(amount: transaction.amount, color: .primary)
                 if style == .tall {
                     Text(transaction.transactionDate, style: .time)
                 }
