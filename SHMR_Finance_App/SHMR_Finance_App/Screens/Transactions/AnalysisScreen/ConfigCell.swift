@@ -30,10 +30,7 @@ class ConfigCell: UITableViewCell {
         return button
     }()
     
-    
-    private var dateChangeType: DateChanged?
-    
-    private var onDateChanged: ((Date, DateChanged) -> Void)?
+    private var onDateChanged: ((Date) -> Void)? //
     private var onSortTapped: (() -> Void)?
     private var onSortSelected: ((SortType) -> Void)?
 
@@ -52,7 +49,6 @@ class ConfigCell: UITableViewCell {
 
     private func setupViews() {
         selectionStyle = .none
-        
         titleLabel.font = .systemFont(ofSize: 17)
         [titleLabel, valueLabel, datePicker, sortButton].forEach { x in
             contentView.addSubview(x)
@@ -66,24 +62,24 @@ class ConfigCell: UITableViewCell {
             valueLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             datePicker.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             datePicker.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            sortButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            sortButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            sortButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            sortButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
         ])
-    
     }
 
-    func configure(title: String, date: Date, change: DateChanged, onChange: @escaping (Date, DateChanged) -> Void) {
+    func configure(title: String, date: Date, onChange: @escaping (Date) -> Void) {
         resetCell()
         [titleLabel, datePicker].forEach({ $0.isHidden = false })
         titleLabel.text = title
         datePicker.date = date
-        self.dateChangeType = change
         self.onDateChanged = onChange
     }
     
     func configureAsButtonCell(currentSort: SortType, onSortSelected: @escaping (SortType) -> Void) {
         resetCell()
         sortButton.isHidden = false
+        titleLabel.isHidden = false
+        titleLabel.text = "Сортировка"
         self.onSortSelected = onSortSelected
 
         let menu = UIMenu(options: .displayInline, children: [
@@ -107,8 +103,7 @@ class ConfigCell: UITableViewCell {
     }
     
     @objc private func dateChanged() {
-        guard let type = dateChangeType else { return }
-        onDateChanged?(datePicker.date, type)
+        onDateChanged?(datePicker.date,)
     }
     
     @objc private func sortButtonTapped() {
