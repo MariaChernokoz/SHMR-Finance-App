@@ -23,7 +23,7 @@ class ConfigCell: UITableViewCell {
     private lazy var sortButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("По дате", for: .normal)
-        button.setTitleColor(.accent, for: .normal)
+        button.setTitleColor(.label, for: .normal)
         button.backgroundColor = UIColor.accent.withAlphaComponent(0.2)
         button.layer.cornerRadius = 8
         button.showsMenuAsPrimaryAction = true
