@@ -130,8 +130,8 @@ struct CreateTransactionView: View {
 
 #Preview {
     let testCategories = [
-        Category(id: 1, name: "Продукты", emoji: "🍏", isIncome: .income),
-        Category(id: 2, name: "Зарплата", emoji: "💸", isIncome: .outcome)
+        Category(id: 1, name: "Продукты", emoji: "🍏", isIncome: true),
+        Category(id: 2, name: "Зарплата", emoji: "💸", isIncome: false)
     ]
     let testTransactions = [
         Transaction(id: 1, accountId: 1, categoryId: 1, amount: 1010, transactionDate: Date(), comment: "test", createdAt: Date(), updatedAt: Date())

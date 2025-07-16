@@ -25,7 +25,7 @@ final class CreateTransactionViewModel: ObservableObject {
     var isEdit: Bool { transactionToEdit != nil }
 
     var filteredCategories: [Category] {
-        categories.filter { $0.isIncome == direction }
+        categories.filter { $0.direction == direction }
     }
 
     init(
@@ -42,7 +42,7 @@ final class CreateTransactionViewModel: ObservableObject {
         self.transactionToEdit = transactionToEdit
 
         if let transaction = transactionToEdit {
-            self.amount = transaction.amount.description
+            self.amount = transaction.amount.formattedAmount
             self.date = transaction.transactionDate
             self.selectedCategory = categories.first(where: { $0.id == transaction.categoryId })
             self.comment = transaction.comment ?? ""
@@ -144,11 +144,12 @@ final class CreateTransactionViewModel: ObservableObject {
         }
     }
     
-    @MainActor
     func loadAccount() async {
         do {
             let account = try await BankAccountsService().getAccount()
-            self.mainAccountId = account.id
+            DispatchQueue.main.async {
+                self.mainAccountId = account.id
+            }
         } catch {
             // обработка ошибки
         }

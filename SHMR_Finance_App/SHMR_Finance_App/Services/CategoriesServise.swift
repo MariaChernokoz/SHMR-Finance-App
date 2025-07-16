@@ -9,86 +9,95 @@ import Foundation
 
 final class CategoriesService: ObservableObject {
     static let shared = CategoriesService()
+    //private let networkClient = NetworkClient()
+    var categories: [Category] = []
     
     @Published private var mockCategories: [Category] = [
         Category(
             id: 1,
             name: "Аренда квартиры",
             emoji: "🏡",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 2,
             name: "Одежда",
             emoji: "🛍",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 3,
             name: "На собачку",
             emoji: "🐕",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 4,
             name: "Ремонт квартиры",
             emoji: "🛠",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 5,
             name: "Продукты",
             emoji: "🛒",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 6,
             name: "Спортзал",
             emoji: "🤸",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 7,
             name: "Медицина",
             emoji: "💊",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 8,
             name: "Машина",
             emoji: "🚗",
-            isIncome: .outcome
+            isIncome: false
         ),
         Category(
             id: 9,
             name: "Зарплата",
             emoji: "🤑",
-            isIncome: .income
+            isIncome: true
         ),
         Category(
             id: 10,
             name: "Подработка",
             emoji: "💸",
-            isIncome: .income
+            isIncome: true
         ),
         Category(
             id: 11,
             name: "Подарок",
             emoji: "🎁",
-            isIncome: .income
+            isIncome: true
         )
     ]
     
     private init() {}
     
     func allCategoriesList() async throws -> [Category] {
-        
-        return mockCategories
+        do {
+            let data = try await NetworkClient.shared.request(endpointValue: "/api/v1/categories")
+            let decoder = JSONDecoder()
+            let fetchedCategories = try decoder.decode([Category].self, from: data)
+            categories = fetchedCategories
+            return categories
+        } catch {
+            print("Error loading categories: \(error)")
+            throw error
+        }
     }
 
     func categories(direction: Direction) async throws -> [Category] {
         
-        return mockCategories.filter { $0.isIncome == direction }
+        return mockCategories.filter { $0.direction == direction }
     }
 }
-

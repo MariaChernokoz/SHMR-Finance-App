@@ -65,7 +65,7 @@ class HistoryViewModel: ObservableObject {
     func filterTransactions() {
         let filtered = transactions.filter { transaction in
             if let category = categories.first(where: { $0.id == transaction.categoryId }) {
-                return category.isIncome == direction
+                return category.direction == direction
             }
             return false
         }

@@ -25,7 +25,7 @@ class TransactionsListViewModel: ObservableObject {
     var filteredTransactions: [Transaction] {
         transactions.filter { transaction in
             if let category = categories.first(where: { $0.id == transaction.categoryId }) {
-                return category.isIncome == direction
+                return category.direction == direction
             }
             return false
         }
