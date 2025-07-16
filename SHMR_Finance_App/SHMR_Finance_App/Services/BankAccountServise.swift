@@ -7,58 +7,32 @@
 
 import Foundation
 
-final class BankAccountsService {
-    
-    private var mockAccounts: [BankAccount] = [
-        BankAccount(
-            id: 1,
-            userId: 1,
-            name: "Основной счёт",
-            balance: 1000.00,
-            currency: "USD", //"RUB", //MARK: добавить учет валюты в отображении транзакций
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        BankAccount(
-            id: 2,
-            userId: 1,
-            name: "Инфестиционный счёт",
-            balance: 33365.99,
-            currency: "RUB",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        BankAccount(
-            id: 3,
-            userId: 2,
-            name: "Основной счёт",
-            balance: 999.00,
-            currency: "USD",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-    ]
-    
+final class BankAccountsService: ObservableObject {
+    static let shared = BankAccountsService()
+    private init() {}
+
+    // Получить единственный банковский счет пользователя
     func getAccount() async throws -> BankAccount {
-                
-        guard let account = mockAccounts.first else {
+        let accounts = try await NetworkClient.shared.fetchDecodeData(endpointValue: "api/v1/accounts", dataType: BankAccount.self)
+        guard let first = accounts.first else {
             throw AccountError.accountNotFound
         }
-        return account
+        return first
     }
-    
+
+    // Изменить счет
     func updateAccount(_ account: BankAccount) async throws {
-        
-        guard let index = mockAccounts.firstIndex(where: { $0.id == account.id }) else {
-            throw AccountError.accountNotFound
-        }
-        mockAccounts[index] = account
+        let balanceString = NSDecimalNumber(decimal: account.balance).stringValue
+        let updateRequest = AccountUpdateRequest(name: account.name, balance: balanceString, currency: account.currency)
+        let endpoint = "api/v1/accounts/\(account.id)"
+        let encoder = JSONEncoder()
+        let bodyData = try encoder.encode(updateRequest)
+        try await NetworkClient.shared.request(endpointValue: endpoint, method: "PUT", body: bodyData)
     }
 }
 
 enum AccountError: Error, LocalizedError {
     case accountNotFound
-    
     var errorDescription: String? {
         switch self {
         case .accountNotFound: return "Account not found"

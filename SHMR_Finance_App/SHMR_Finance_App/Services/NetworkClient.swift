@@ -5,10 +5,12 @@
 import Foundation
 
 final class NetworkClient {
+    
     let urlString = "https://shmr-finance.ru/"
     private let token = "NC6Lmc6wwJ02KQ06urPOj4gm"
     
     static let shared = NetworkClient()
+    
     private init() { }
 
     private var decoder: JSONDecoder = {
@@ -18,10 +20,8 @@ final class NetworkClient {
             let dateString = try container.decode(String.self)
 
             let formats = [
-                "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX",
-                "yyyy-MM-dd'T'HH:mm:ssXXXXX",
-                "yyyy-MM-dd'T'HH:mm:ssZ",
-                "yyyy-MM-dd"
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+                "yyyy-MM-dd'T'HH:mm:ssZ"
             ]
 
             for format in formats {
@@ -42,36 +42,38 @@ final class NetworkClient {
         }
         return decoder
     }()
-
     
-    func request(endpointValue: String) async throws -> Data {
-        let endpoint = urlString + endpointValue
-        print(endpoint)
-        
-        var request = URLRequest(url: URL(string: endpoint)!)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        print(request)
-        
-        try Task.checkCancellation()
-
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let response = response as? HTTPURLResponse,
-              validStatus.contains(response.statusCode) else {
-            throw NetworkError.badResponse
-        }
-        
-        print(data)
-        return data
-    }
+//    func request(endpointValue: String) async throws -> Data {
+//        let endpoint = urlString + endpointValue
+//        //print(endpoint)
+//        
+//        var request = URLRequest(url: URL(string: endpoint)!)
+//        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+//        //print(request)
+//        
+//        try Task.checkCancellation()
+//
+//        let (data, response) = try await URLSession.shared.data(for: request)
+//        
+//        guard let response = response as? HTTPURLResponse,
+//              validStatus.contains(response.statusCode) else {
+//            throw NetworkError.badResponse
+//        }
+//        //print(data)
+//        return data
+//    }
     
-    func requestTransactionOperation(_ transaction: Transaction, httpMethod: String, isDelete: Bool = false, isCreate: Bool = false) async throws {
+    func requestTransactionOperation(_ transaction: Transaction,
+                                     httpMethod: String,
+                                     isDelete: Bool = false,
+                                     isCreate: Bool = false) async throws {
+        
         let endpoint = isCreate ? "https://shmr-finance.ru/api/v1/transactions" : "https://shmr-finance.ru/api/v1/transactions/\(transaction.id)"
         
         var request = URLRequest(url: URL(string: endpoint)!)
         request.httpMethod = httpMethod
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
         request.setValue(isDelete ? "*/*" : "application/json", forHTTPHeaderField: "accept")
         if !isDelete{
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -91,21 +93,37 @@ final class NetworkClient {
               validStatus.contains(httpResponse.statusCode) else {
             throw NetworkError.badResponse
         }
-        
     }
     
-    
+    // получение и декодирование данных
     func fetchDecodeData<T: Codable>(endpointValue: String, dataType: T.Type) async throws -> [T] {
-        do{
+        do {
             let data = try await self.request(endpointValue: endpointValue)
             return try decoder.decode([T].self, from: data)
-        }catch{
+        } catch {
             print(error)
             print(error.localizedDescription)
             throw NetworkError.decodingError
         }
     }
-    
+
+    func request(endpointValue: String, method: String = "GET", body: Data? = nil) async throws -> Data {
+        let endpoint = urlString + endpointValue
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let body = body {
+            request.httpBody = body
+        }
+        try Task.checkCancellation()
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let response = response as? HTTPURLResponse,
+              validStatus.contains(response.statusCode) else {
+            throw NetworkError.badResponse
+        }
+        return data
+    }
 }
 
 let validStatus = 200...299
@@ -130,7 +148,6 @@ enum NetworkError: Error {
     case networkError
     case decodingError
 }
-
 
 extension DateFormatter {
     static let withFractionalSeconds: DateFormatter = {

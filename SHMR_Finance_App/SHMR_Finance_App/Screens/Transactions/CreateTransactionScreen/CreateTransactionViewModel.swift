@@ -146,7 +146,7 @@ final class CreateTransactionViewModel: ObservableObject {
     
     func loadAccount() async {
         do {
-            let account = try await BankAccountsService().getAccount()
+            let account = try await BankAccountsService.shared.getAccount()
             DispatchQueue.main.async {
                 self.mainAccountId = account.id
             }
