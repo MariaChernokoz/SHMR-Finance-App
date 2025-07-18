@@ -16,6 +16,7 @@ enum TableViewCellNames {
 class AnalysisViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     let tableView = UITableView(frame: .zero, style: .insetGrouped)
     let viewModel: AnalysisViewModel
+    private var loadingSpinner: UIActivityIndicatorView?
 
     init(direction: Direction, categories: [Category]) {
         self.viewModel = AnalysisViewModel(direction: direction, categories: categories)
@@ -43,8 +44,12 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
 
         viewModel.onDataChanged = { [weak self] in
             self?.tableView.reloadData()
+            self?.updateLoadingState()
+            self?.showErrorIfNeeded()
         }
         viewModel.loadTransactions()
+        updateLoadingState()
+        showErrorIfNeeded()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -120,6 +125,29 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
             return 120 // высота под диаграмму
         } else {
             return 60 // высота под транзакцию
+        }
+    }
+    
+    private func updateLoadingState() {
+        if viewModel.isLoading {
+            if loadingSpinner == nil {
+                loadingSpinner = UIActivityIndicatorView(style: .large)
+                loadingSpinner?.center = view.center
+                view.addSubview(loadingSpinner!)
+                loadingSpinner?.startAnimating()
+            }
+        } else {
+            loadingSpinner?.stopAnimating()
+            loadingSpinner?.removeFromSuperview()
+            loadingSpinner = nil
+        }
+    }
+    
+    private func showErrorIfNeeded() {
+        if let error = viewModel.errorMessage {
+            let alert = UIAlertController(title: "Ошибка", message: error, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Ок", style: .default))
+            present(alert, animated: true)
         }
     }
 }

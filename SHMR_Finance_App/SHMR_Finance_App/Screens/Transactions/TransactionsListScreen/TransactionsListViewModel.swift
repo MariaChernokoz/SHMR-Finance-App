@@ -12,6 +12,8 @@ class TransactionsListViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var categories: [Category] = []
     @Published var isCreatingTransaction = false
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String? = nil
 
     let direction: Direction
 
@@ -44,26 +46,21 @@ class TransactionsListViewModel: ObservableObject {
         1
     }
 
-    func amountFormatter(_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
-        formatter.maximumFractionDigits = 2
-        return (formatter.string(for: amount) ?? "0") + " ₽"
-    }
-    
-    @Published var errorMessage: String? = nil
-
     @MainActor
     func loadData() async {
+        isLoading = true
+        errorMessage = nil // Сбрасываем предыдущие ошибки
+        
         do {
             let today = transactionsService.todayInterval()
             async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: today)
             async let categoriesTask = categoriesService.allCategoriesList()
             transactions = try await transactionsTask
             categories = try await categoriesTask
+            isLoading = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userFriendlyNetworkMessage
+            isLoading = false
         }
     }
 }

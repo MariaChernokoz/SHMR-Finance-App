@@ -11,6 +11,7 @@ class CategoriesViewModel: ObservableObject {
     
     @Published var categories: [Category] = []
     @Published var errorMessage: String? = nil
+    @Published var isLoading: Bool = false
     @Published var searchText: String = ""
 
     var filteredCategories: [Category] {
@@ -48,11 +49,16 @@ class CategoriesViewModel: ObservableObject {
 
     @MainActor
     func loadData() async {
+        isLoading = true
+        errorMessage = nil // Сбрасываем предыдущие ошибки
+        
         do {
             async let categoriesTask = categoriesService.allCategoriesList()
             categories = try await categoriesTask
+            isLoading = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userFriendlyNetworkMessage
+            isLoading = false
         }
     }
 }

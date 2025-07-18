@@ -10,174 +10,124 @@ import Foundation
 final class TransactionsService: ObservableObject {
     static let shared = TransactionsService()
     
-    @Published private var mockTransactions: [Transaction] = [
-        Transaction(
-            id: 1,
-            accountId: 1,
-            categoryId: 3,
-            amount: Decimal(555.55),
-            transactionDate: Date(),
-            comment: "Бобик",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 2,
-            accountId: 1,
-            categoryId: 5,
-            amount: Decimal(444.00),
-            transactionDate: Date(),
-            comment: "Другу за кофе",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 3,
-            accountId: 1,
-            categoryId: 3,
-            amount: Decimal(1200.00),
-            transactionDate: Date(),
-            comment: "Бублик",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 4,
-            accountId: 1,
-            categoryId: 6,
-            amount: Decimal(9999.99),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
-            comment: "Абонемент",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 5,
-            accountId: 1,
-            categoryId: 6,
-            amount: Decimal(10000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date(),
-            comment: "Пилатес",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 6,
-            accountId: 1,
-            categoryId: 6,
-            amount: Decimal(10000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
-            comment: "Йога",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 7,
-            accountId: 1,
-            categoryId: 8,
-            amount: Decimal(3500.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 8,
-            accountId: 1,
-            categoryId: 9,
-            amount: Decimal(180000.00),
-            transactionDate: Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 9,
-            accountId: 1,
-            categoryId: 10,
-            amount: Decimal(9999.99),
-            transactionDate: Date(),
-            comment: "Продажа картины",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 10,
-            accountId: 1,
-            categoryId: 10,
-            amount: Decimal(15000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 11,
-            accountId: 1,
-            categoryId: 11,
-            amount: Decimal(25000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
+    private init() {}
+
+    // транзакции за период
+    func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
+        // Получаем основной аккаунт для получения его ID
+        let account = try await BankAccountsService.shared.getAccount()
+        print("Getting transactions for account ID: \(account.id)")
+        
+        // Конвертируем даты в UTC для отправки на сервер
+        let utcFormatter = DateFormatter()
+        utcFormatter.dateFormat = "yyyy-MM-dd"
+        utcFormatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC
+        let startDate = utcFormatter.string(from: interval.start)
+        let endDate = utcFormatter.string(from: interval.end)
+        print("Period (UTC): \(startDate) to \(endDate)")
+        
+        // Используем правильный эндпоинт с параметрами
+        let endpoint = "api/v1/transactions/account/\(account.id)/period?startDate=\(startDate)&endDate=\(endDate)"
+        print("Requesting endpoint: \(endpoint)")
+        
+        let responses = try await NetworkClient.shared.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
+        print("Received \(responses.count) transaction responses")
+        
+        // конвертируем в Transaction, предполагая что сервер возвращает UTC
+        let transactions = responses.compactMap { response -> Transaction? in
+            // Если сервер возвращает UTC, конвертируем в локальное время
+            let localDate = response.transactionDate.convertFromUTCToLocal()
+            return response.toTransaction(with: localDate)
+        }
+        print("Successfully converted \(transactions.count) transactions")
+        
+        return transactions
+    }
+    
+    // создание
+    func createTransaction(_ transaction: Transaction) async throws {
+        // Конвертируем дату в UTC для отправки на сервер
+        let utcTransaction = Transaction(
+            id: transaction.id,
+            accountId: transaction.accountId,
+            categoryId: transaction.categoryId,
+            amount: transaction.amount,
+            transactionDate: transaction.transactionDate.convertToUTC(),
+            comment: transaction.comment,
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt
         )
         
-    ]
-    
-    private init() {}
-    
+        let request = TransactionRequest(from: utcTransaction)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let bodyData = try encoder.encode(request)
+        
+        try await NetworkClient.shared.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
+    }
+
+    // редактирование 
+    func updateTransaction(_ transaction: Transaction) async throws {
+        // Конвертируем дату в UTC для отправки на сервер
+        let utcTransaction = Transaction(
+            id: transaction.id,
+            accountId: transaction.accountId,
+            categoryId: transaction.categoryId,
+            amount: transaction.amount,
+            transactionDate: transaction.transactionDate.convertToUTC(),
+            comment: transaction.comment,
+            createdAt: transaction.createdAt,
+            updatedAt: transaction.updatedAt
+        )
+        
+        let request = TransactionRequest(from: utcTransaction)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let bodyData = try encoder.encode(request)
+        
+        try await NetworkClient.shared.request(endpointValue: "api/v1/transactions/\(transaction.id)", method: "PUT", body: bodyData)
+    }
+
+    // Удалить транзакцию
+    func deleteTransaction(transactionId: Int) async throws {
+        try await NetworkClient.shared.request(endpointValue: "api/v1/transactions/\(transactionId)", method: "DELETE")
+    }
+
+    // Получить следующий ID для новой транзакции
+    func nextTransactionId() -> Int {
+        // Для сетевого API ID генерируется сервером, поэтому возвращаем 0
+        // или можно сделать запрос для получения максимального ID
+        return 0
+    }
+
+    // Вспомогательный метод для получения интервала "сегодня"
     func todayInterval() -> DateInterval {
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
         return DateInterval(start: startOfDay, end: endOfDay)
     }
     
-    func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
-        
-        return mockTransactions.filter { transaction in
-            interval.contains(transaction.transactionDate)
-        }
-    }
-    
-    func createTransaction(_ transaction: Transaction) async throws {
-        
-        guard !mockTransactions.contains(where: { $0.id == transaction.id }) else {
-            throw TransactionServiceError.duplicateTransaction
-        }
-        mockTransactions.append(transaction)
-    }
-    
-    func updateTransaction(_ transaction: Transaction) async throws {
-        
-        guard let index = mockTransactions.firstIndex(where: { $0.id == transaction.id }) else {
-            throw TransactionServiceError.transactionNotFound
-        }
-        mockTransactions[index] = transaction
-    }
-    
-    func deleteTransaction(transactionId: Int) async throws {
-        
-        let initialCount = mockTransactions.count
-        mockTransactions.removeAll { $0.id == transactionId }
-            
-        if mockTransactions.count == initialCount {
-            throw TransactionServiceError.transactionNotFound
-        }
-    }
-    
-    func nextTransactionId() -> Int {
-        (mockTransactions.map { $0.id }.max() ?? 0) + 1
+    // Временный метод для тестирования с конкретной датой
+    func testInterval() -> DateInterval {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let testDate = dateFormatter.date(from: "2025-07-16")!
+        let startOfDay = Calendar.current.startOfDay(for: testDate)
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
+        return DateInterval(start: startOfDay, end: endOfDay)
     }
 }
 
 enum TransactionServiceError: Error, LocalizedError {
     case transactionNotFound
     case duplicateTransaction
+    case invalidTransactionData
     
     var errorDescription: String? {
         switch self {
         case .transactionNotFound: return "Transaction not found"
         case .duplicateTransaction: return "Transaction already exists"
+        case .invalidTransactionData: return "Invalid transaction data"
         }
     }
 }

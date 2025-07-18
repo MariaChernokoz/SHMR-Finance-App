@@ -20,7 +20,7 @@ class AccountViewModel: ObservableObject {
             let account = try await bankAccountService.getAccount()
             self.bankAccount = account
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userFriendlyNetworkMessage
         }
     }
 
@@ -49,9 +49,8 @@ class AccountViewModel: ObservableObject {
                 self.bankAccount = account
             }
         } catch {
-            let errorText = error.localizedDescription
             await MainActor.run {
-                errorMessage = errorText
+                errorMessage = error.userFriendlyNetworkMessage
             }
         }
     }

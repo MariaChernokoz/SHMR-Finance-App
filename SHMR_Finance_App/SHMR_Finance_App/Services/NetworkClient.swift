@@ -43,55 +43,30 @@ final class NetworkClient {
         return decoder
     }()
     
-//    func request(endpointValue: String) async throws -> Data {
-//        let endpoint = urlString + endpointValue
-//        //print(endpoint)
-//        
-//        var request = URLRequest(url: URL(string: endpoint)!)
-//        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-//        //print(request)
-//        
-//        try Task.checkCancellation()
-//
-//        let (data, response) = try await URLSession.shared.data(for: request)
-//        
-//        guard let response = response as? HTTPURLResponse,
-//              validStatus.contains(response.statusCode) else {
-//            throw NetworkError.badResponse
-//        }
-//        //print(data)
-//        return data
-//    }
-    
-    func requestTransactionOperation(_ transaction: Transaction,
-                                     httpMethod: String,
-                                     isDelete: Bool = false,
-                                     isCreate: Bool = false) async throws {
-        
-        let endpoint = isCreate ? "https://shmr-finance.ru/api/v1/transactions" : "https://shmr-finance.ru/api/v1/transactions/\(transaction.id)"
+    func request(endpointValue: String) async throws -> Data {
+        let endpoint = urlString + endpointValue
         
         var request = URLRequest(url: URL(string: endpoint)!)
-        request.httpMethod = httpMethod
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        request.setValue(isDelete ? "*/*" : "application/json", forHTTPHeaderField: "accept")
-        if !isDelete{
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        }
-        
-        let requestBody = transaction.jsonObject
-        
+        try Task.checkCancellation()
+
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-        } catch{
-            throw NetworkError.decodingError
-        }
-        
-        let (_, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              validStatus.contains(httpResponse.statusCode) else {
-            throw NetworkError.badResponse
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkError.networkError
+            }
+            
+            guard validStatus.contains(httpResponse.statusCode) else {
+                throw handleHTTPError(statusCode: httpResponse.statusCode)
+            }
+            
+            return data
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.networkError
         }
     }
     
@@ -101,12 +76,11 @@ final class NetworkClient {
             let data = try await self.request(endpointValue: endpointValue)
             return try decoder.decode([T].self, from: data)
         } catch {
-            print(error)
-            print(error.localizedDescription)
             throw NetworkError.decodingError
         }
     }
 
+    @discardableResult
     func request(endpointValue: String, method: String = "GET", body: Data? = nil) async throws -> Data {
         let endpoint = urlString + endpointValue
         var request = URLRequest(url: URL(string: endpoint)!)
@@ -117,12 +91,24 @@ final class NetworkClient {
             request.httpBody = body
         }
         try Task.checkCancellation()
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let response = response as? HTTPURLResponse,
-              validStatus.contains(response.statusCode) else {
-            throw NetworkError.badResponse
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkError.networkError
+            }
+            
+            guard validStatus.contains(httpResponse.statusCode) else {
+                throw handleHTTPError(statusCode: httpResponse.statusCode)
+            }
+            
+            return data
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.networkError
         }
-        return data
     }
 }
 
@@ -142,12 +128,67 @@ extension URLSession: HTTPDataDownloader {
     }
 }
 
-enum NetworkError: Error {
-    case badResponse
-    case invalidURL
-    case networkError
-    case decodingError
+extension NetworkClient {
+    private func handleHTTPError(statusCode: Int) -> NetworkError {
+        switch statusCode {
+        case 400:
+            return .badResponse(statusCode)
+        case 401:
+            return .unauthorized
+        case 403:
+            return .forbidden
+        case 404:
+            return .notFound
+        case 429:
+            return .tooManyRequests
+        case 500...599:
+            return .internalServerError
+        default:
+            return .serverError(statusCode)
+        }
+    }
 }
+
+//enum NetworkError: Error {
+//    case badResponse(Int)
+//    case invalidURL
+//    case networkError
+//    case decodingError
+//    case noInternetConnection
+//    case serverError(Int)
+//    case unauthorized
+//    case forbidden
+//    case notFound
+//    case tooManyRequests
+//    case internalServerError
+//    
+//    var userFriendlyMessage: String {
+//        switch self {
+//        case .badResponse(let code):
+//            return "Ошибка сервера (\(code)). Попробуйте позже."
+//        case .invalidURL:
+//            return "Некорректный адрес сервера."
+//        case .networkError:
+//            return "Ошибка сети. Проверьте соединение."
+//        case .decodingError:
+//            return "Ошибка обработки данных с сервера."
+//        case .noInternetConnection:
+//            return "Нет соединения с интернетом. Проверьте подключение."
+//        case .serverError(let code):
+//            return "Ошибка сервера (\(code)). Попробуйте позже."
+//        case .unauthorized:
+//            return "Необходима авторизация. Войдите в систему."
+//        case .forbidden:
+//            return "Доступ запрещен."
+//        case .notFound:
+//            return "Запрашиваемые данные не найдены."
+//        case .tooManyRequests:
+//            return "Слишком много запросов. Попробуйте позже."
+//        case .internalServerError:
+//            return "Внутренняя ошибка сервера. Попробуйте позже."
+//        }
+//    }
+//}
 
 extension DateFormatter {
     static let withFractionalSeconds: DateFormatter = {

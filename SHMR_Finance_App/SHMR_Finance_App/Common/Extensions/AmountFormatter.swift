@@ -23,12 +23,6 @@ extension Double {
     }
 }
 
-//extension Decimal {
-//    var formattedAmount: String {
-//        Formatter.amount.string(from: self as NSDecimalNumber) ?? "\(self)"
-//    }
-//}
-
 extension Decimal {
     var formattedAmount: String {
         let formatter = NumberFormatter()

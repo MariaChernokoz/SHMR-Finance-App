@@ -20,17 +20,13 @@ class HistoryViewModel: ObservableObject {
         let today = Calendar.current.startOfDay(for: Date())
         return Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: today) ?? Date()
     }()
-    func applyStartDateFilter() {
+    func validateDates() {
         if startDate > endDate {
             endDate = startDate
         }
-        Task { await loadData() }
-    }
-    func applyEndDateFilter() {
         if endDate < startDate {
             startDate = endDate
         }
-        Task { await loadData() }
     }
     @Published var sortType: SortType = .date {
         didSet { filterTransactions() }
@@ -42,14 +38,17 @@ class HistoryViewModel: ObservableObject {
         self.direction = direction
     }
     @Published var filteredTransactions: [Transaction] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String? = nil
 
     private let transactionsService = TransactionsService.shared
     private let categoriesService = CategoriesService.shared
     
-    @Published var errorMessage: String? = nil
-
     @MainActor
     func loadData() async {
+        isLoading = true
+        errorMessage = nil // Сбрасываем предыдущие ошибки
+        
         do {
             let interval = DateInterval(start: startDate, end: endDate)
             async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: interval)
@@ -57,8 +56,10 @@ class HistoryViewModel: ObservableObject {
             transactions = try await transactionsTask
             categories = try await categoriesTask
             filterTransactions()
+            isLoading = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userFriendlyNetworkMessage
+            isLoading = false
         }
     }
 
@@ -77,15 +78,24 @@ class HistoryViewModel: ObservableObject {
         }
     }
 
-    func amountFormatter(_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = " "
-        formatter.maximumFractionDigits = 2
-        return (formatter.string(for: amount) ?? "0") + " ₽"
-    }
-
     var totalAmount: Decimal {
         filteredTransactions.reduce(0) { $0 + $1.amount }
+    }
+
+    func applyStartDateFilter() {
+        if startDate > endDate {
+            endDate = startDate
+        }
+        Task { await loadData() }
+    }
+    func applyEndDateFilter() {
+        if endDate < startDate {
+            startDate = endDate
+        }
+        Task { await loadData() }
+    }
+
+    func triggerTestError() {
+        errorMessage = "Тестовая ошибка для проверки алерта"
     }
 }

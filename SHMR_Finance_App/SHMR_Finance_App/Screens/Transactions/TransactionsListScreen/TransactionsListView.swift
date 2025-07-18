@@ -19,9 +19,7 @@ struct TransactionsListView: View {
         HStack {
             Text("Сумма")
             Spacer()
-            //MARK: сумма операции 1
             AmountTextRow(amount: viewModel.totalAmount, color: .primary)
-            //Text(viewModel.amountFormatter(viewModel.totalAmount))
         }
     }
     
@@ -49,7 +47,6 @@ struct TransactionsListView: View {
                     transaction: transaction,
                     category: category,
                     direction: viewModel.direction,
-                    amountFormatter: viewModel.amountFormatter,
                     style: .regular
                 )
                 .onTapGesture {
@@ -150,7 +147,6 @@ struct TransactionRow: View {
     let transaction: Transaction
     let category: Category?
     let direction: Direction
-    let amountFormatter: (Decimal) -> String
     var style: TransactionRowStyle
 
     var body: some View {
@@ -175,9 +171,6 @@ struct TransactionRow: View {
             }
             Spacer()
             VStack (alignment: .trailing){
-                //MARK: сумма операции 2
-                //Text(amountFormatter(transaction.amount))
-                //Text(transaction.amount.formattedAmount + " ₽")
                 AmountTextRow(amount: transaction.amount, color: .primary)
                 if style == .tall {
                     Text(transaction.transactionDate, style: .time)

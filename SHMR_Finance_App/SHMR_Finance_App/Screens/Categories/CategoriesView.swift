@@ -39,6 +39,12 @@ struct CategoriesView: View {
                     .listSectionSpacing(0)
                     .scrollDismissesKeyboard(.immediately)
                 }
+                
+                if viewModel.isLoading {
+                    ProgressView()
+                        .tint(.navigation)
+                        .scaleEffect(1.5)
+                }
             }
         }
         .task {
