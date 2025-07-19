@@ -48,6 +48,10 @@ final class CreateTransactionViewModel: ObservableObject {
             self.date = transaction.transactionDate
             self.selectedCategory = categories.first(where: { $0.id == transaction.categoryId })
             self.comment = transaction.comment ?? ""
+        } else {
+            // Устанавливаем первую подходящую категорию по умолчанию
+            let filteredCategories = categories.filter { $0.direction == direction }
+            self.selectedCategory = filteredCategories.first
         }
         // Загружаем актуальный accountId
         Task {
@@ -155,7 +159,9 @@ final class CreateTransactionViewModel: ObservableObject {
     
     func loadAccount() async {
         do {
-            let account = try await BankAccountsService.shared.getAccount()
+            //let account = try await BankAccountsService.shared.getAccount()
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else { throw AccountError.accountNotFound }
             await MainActor.run {
                 self.mainAccountId = account.id
                 print("Loaded account ID: \(account.id)")

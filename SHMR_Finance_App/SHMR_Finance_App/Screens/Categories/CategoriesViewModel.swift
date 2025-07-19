@@ -6,7 +6,9 @@
 //
 
 import Foundation
+import SwiftUI
 
+@MainActor
 class CategoriesViewModel: ObservableObject {
     
     @Published var categories: [Category] = []
@@ -53,7 +55,7 @@ class CategoriesViewModel: ObservableObject {
         errorMessage = nil // Сбрасываем предыдущие ошибки
         
         do {
-            async let categoriesTask = categoriesService.allCategoriesList()
+            async let categoriesTask = categoriesService.getAllCategories()
             categories = try await categoriesTask
             isLoading = false
         } catch {

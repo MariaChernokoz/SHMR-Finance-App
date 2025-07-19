@@ -8,16 +8,18 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AccountViewModel: ObservableObject {
     private let bankAccountService = BankAccountsService.shared
 
     @Published var bankAccount: BankAccount? = nil
     @Published var errorMessage: String? = nil
 
-    @MainActor
     func loadAccount() async {
         do {
-            let account = try await bankAccountService.getAccount()
+            //let account = try await bankAccountService.getAccount()
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else { throw AccountError.accountNotFound }
             self.bankAccount = account
         } catch {
             errorMessage = error.userFriendlyNetworkMessage
@@ -44,7 +46,7 @@ class AccountViewModel: ObservableObject {
         account.currency = newCurrency
 
         do {
-            try await bankAccountService.updateAccount(account)
+            try await bankAccountService.saveAccount(account)
             await MainActor.run {
                 self.bankAccount = account
             }

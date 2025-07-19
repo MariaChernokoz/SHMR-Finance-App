@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class HistoryViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var categories: [Category] = []
@@ -52,7 +53,7 @@ class HistoryViewModel: ObservableObject {
         do {
             let interval = DateInterval(start: startDate, end: endDate)
             async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: interval)
-            async let categoriesTask = categoriesService.allCategoriesList()
+            async let categoriesTask = categoriesService.getAllCategories()
             transactions = try await transactionsTask
             categories = try await categoriesTask
             filterTransactions()

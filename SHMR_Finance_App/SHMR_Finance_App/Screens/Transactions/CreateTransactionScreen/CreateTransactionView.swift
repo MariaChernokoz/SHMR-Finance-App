@@ -42,7 +42,7 @@ struct CreateTransactionView: View {
                         }
                         Picker("", selection: $viewModel.selectedCategory) {
                             ForEach(viewModel.filteredCategories) { category in
-                                Text(category.name).tag(Optional(category))
+                                Text(category.name).tag(category as Category?)
                             }
                         }
                         .labelsHidden()

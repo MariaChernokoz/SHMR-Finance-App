@@ -16,6 +16,17 @@ struct BankAccount: Codable, Identifiable {
     let createdAt: Date
     let updatedAt: Date
 
+    // Обычный инициализатор для конвертации из BankAccountEntity
+    init(id: Int, userId: Int, name: String, balance: Decimal, currency: String, createdAt: Date, updatedAt: Date) {
+        self.id = id
+        self.userId = userId
+        self.name = name
+        self.balance = balance
+        self.currency = currency
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, userId, name, balance, currency, createdAt, updatedAt
     }

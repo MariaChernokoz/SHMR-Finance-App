@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class TransactionsListViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var categories: [Category] = []
@@ -54,7 +55,7 @@ class TransactionsListViewModel: ObservableObject {
         do {
             let today = transactionsService.todayInterval()
             async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: today)
-            async let categoriesTask = categoriesService.allCategoriesList()
+            async let categoriesTask = categoriesService.getAllCategories()
             transactions = try await transactionsTask
             categories = try await categoriesTask
             isLoading = false
