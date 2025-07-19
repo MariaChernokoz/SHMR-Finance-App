@@ -7,88 +7,78 @@
 
 import Foundation
 
-final class CategoriesService: ObservableObject {
+@MainActor
+final class CategoriesService {
     static let shared = CategoriesService()
     
-    @Published private var mockCategories: [Category] = [
-        Category(
-            id: 1,
-            name: "Аренда квартиры",
-            emoji: "🏡",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 2,
-            name: "Одежда",
-            emoji: "🛍",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 3,
-            name: "На собачку",
-            emoji: "🐕",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 4,
-            name: "Ремонт квартиры",
-            emoji: "🛠",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 5,
-            name: "Продукты",
-            emoji: "🛒",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 6,
-            name: "Спортзал",
-            emoji: "🤸",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 7,
-            name: "Медицина",
-            emoji: "💊",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 8,
-            name: "Машина",
-            emoji: "🚗",
-            isIncome: .outcome
-        ),
-        Category(
-            id: 9,
-            name: "Зарплата",
-            emoji: "🤑",
-            isIncome: .income
-        ),
-        Category(
-            id: 10,
-            name: "Подработка",
-            emoji: "💸",
-            isIncome: .income
-        ),
-        Category(
-            id: 11,
-            name: "Подарок",
-            emoji: "🎁",
-            isIncome: .income
-        )
-    ]
+    private let localStore: CategoriesLocalStore
     
-    private init() {}
-    
-    func allCategoriesList() async throws -> [Category] {
-        
-        return mockCategories
+    private init() {
+        self.localStore = try! SwiftDataCategoriesLocalStore()
     }
-
-    func categories(direction: Direction) async throws -> [Category] {
-        
-        return mockCategories.filter { $0.isIncome == direction }
+    
+    func getAllCategories() async throws -> [Category] {
+        do {
+            let categories = try await NetworkClient.shared.fetchDecodeData(endpointValue: "api/v1/categories", dataType: Category.self)
+            
+            AppNetworkStatus.shared.handleSuccessfulRequest()
+            
+            return categories
+        } catch let error as NetworkError {
+            
+            AppNetworkStatus.shared.handleNetworkError(error)
+            
+            // eсли сетевой запрос не успешный - возвращаем из локального хранилища
+            let localCategories = try await localStore.fetchAllCategories()
+            
+            // если локальное хранилище пустоем - создаем тестовые категории
+            if localCategories.isEmpty {
+                let testCategories = [
+                    Category(id: 1, name: "Продукты", emoji: "🛒", isIncome: false),
+                    Category(id: 2, name: "Транспорт", emoji: "🚗", isIncome: false),
+                    Category(id: 3, name: "Развлечения", emoji: "🎮", isIncome: false),
+                    Category(id: 4, name: "Зарплата", emoji: "💰", isIncome: true),
+                    Category(id: 5, name: "Подарки", emoji: "🎁", isIncome: true),
+                    Category(id: 6, name: "Здоровье", emoji: "🏥", isIncome: false),
+                    Category(id: 7, name: "Красота", emoji: "💄", isIncome: false),
+                    Category(id: 8, name: "Образование", emoji: "📚", isIncome: false),
+                    Category(id: 9, name: "Хобби", emoji: "🎨", isIncome: false),
+                    Category(id: 10, name: "Домашние животные", emoji: "🐾", isIncome: false),
+                    Category(id: 11, name: "Рестораны", emoji: "🍽️", isIncome: false)
+                ]
+                
+                return testCategories
+            }
+            
+            return localCategories
+        } catch {
+            // в случае любой другой ошибки - возвращаем из локального хранилища
+            let localCategories = try await localStore.fetchAllCategories()
+            
+            if localCategories.isEmpty {
+                let testCategories = [
+                    Category(id: 1, name: "Продукты", emoji: "🛒", isIncome: false),
+                    Category(id: 2, name: "Транспорт", emoji: "🚗", isIncome: false),
+                    Category(id: 3, name: "Развлечения", emoji: "🎮", isIncome: false),
+                    Category(id: 4, name: "Зарплата", emoji: "💰", isIncome: true),
+                    Category(id: 5, name: "Подарки", emoji: "🎁", isIncome: true),
+                    Category(id: 6, name: "Здоровье", emoji: "🏥", isIncome: false),
+                    Category(id: 7, name: "Красота", emoji: "💄", isIncome: false),
+                    Category(id: 8, name: "Образование", emoji: "📚", isIncome: false),
+                    Category(id: 9, name: "Хобби", emoji: "🎨", isIncome: false),
+                    Category(id: 10, name: "Домашние животные", emoji: "🐾", isIncome: false),
+                    Category(id: 11, name: "Рестораны", emoji: "🍽️", isIncome: false)
+                ]
+                
+                return testCategories
+            }
+            
+            return localCategories
+        }
+    }
+    
+    func getCategory(by id: Int) async throws -> Category? {
+        let categories = try await getAllCategories()
+        return categories.first { $0.id == id }
     }
 }
-

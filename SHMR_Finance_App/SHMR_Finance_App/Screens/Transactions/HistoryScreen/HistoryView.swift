@@ -37,18 +37,18 @@ struct HistoryView: View {
 
             DatePickerRow(title: "Начало", date: $viewModel.startDate)
                 .onChange(of: viewModel.startDate) {
-                        viewModel.applyStartDateFilter()
-                    }
+                    viewModel.applyStartDateFilter()
+                }
             DatePickerRow(title: "Конец", date: $viewModel.endDate)
                 .onChange(of: viewModel.endDate) {
-                        viewModel.applyEndDateFilter()
-                    }
+                    viewModel.applyEndDateFilter()
+                }
             SortPickerRow(title: "Сортировка", sortType: $viewModel.sortType)
 
             HStack {
                 Text("Сумма")
                 Spacer()
-                Text(viewModel.amountFormatter(viewModel.totalAmount))
+                Text(viewModel.totalAmount.formattedAmount + " ₽")
             }
 
             Section(header: Text("Операции")) {
@@ -58,7 +58,6 @@ struct HistoryView: View {
                         transaction: transaction,
                         category: category,
                         direction: viewModel.direction,
-                        amountFormatter: viewModel.amountFormatter,
                         style: .tall
                     )
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
@@ -72,7 +71,15 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            transactionsList
+            VStack {
+                if viewModel.isLoading && viewModel.filteredTransactions.isEmpty {
+                    ProgressView()
+                        .tint(.navigation)
+                } else {
+                    transactionsList
+                }
+            }
+            .errorAlert(errorMessage: $viewModel.errorMessage)
         }
         .tint(Color.accentColor)
         .navigationBarBackButtonHidden(true)
@@ -96,7 +103,6 @@ struct HistoryView: View {
         .task {
             await viewModel.loadData()
         }
-        .errorAlert(errorMessage: $viewModel.errorMessage)
     }
 }
 

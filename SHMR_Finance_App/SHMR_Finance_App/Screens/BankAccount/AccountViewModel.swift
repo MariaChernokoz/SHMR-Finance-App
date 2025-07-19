@@ -8,22 +8,24 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AccountViewModel: ObservableObject {
-    private let bankAccountService = BankAccountsService()
+    private let bankAccountService = BankAccountsService.shared
 
     @Published var bankAccount: BankAccount? = nil
     @Published var errorMessage: String? = nil
-       
-    @MainActor
+
     func loadAccount() async {
         do {
-            let bankAccount = try await bankAccountService.getAccount()
-            self.bankAccount = bankAccount
+            //let account = try await bankAccountService.getAccount()
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else { throw AccountError.accountNotFound }
+            self.bankAccount = account
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.userFriendlyNetworkMessage
         }
     }
-    
+
     func saveAccount(newBalance: String, newCurrency: String) async {
         guard var account = bankAccount else {
             errorMessage = "Аккаунт не найден"
@@ -34,25 +36,23 @@ class AccountViewModel: ObservableObject {
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "\u{00A0}", with: "") // неразрывные пробелы
             .replacingOccurrences(of: ",", with: ".")
-        
+
         guard let balance = Decimal(string: normalizedBalance) else {
             errorMessage = "Некорректный баланс"
             return
         }
-        
+
         account.balance = balance
         account.currency = newCurrency
 
         do {
-            try await bankAccountService.updateAccount(account)
-            let updatedAccount = account
+            try await bankAccountService.saveAccount(account)
             await MainActor.run {
-                self.bankAccount = updatedAccount
+                self.bankAccount = account
             }
         } catch {
-            let errorText = error.localizedDescription
             await MainActor.run {
-                errorMessage = errorText
+                errorMessage = error.userFriendlyNetworkMessage
             }
         }
     }

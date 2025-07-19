@@ -8,13 +8,16 @@
 import Foundation
 import SwiftUI
 
-final class CreateTransactionViewModel: ObservableObject {
+@MainActor
+class CreateTransactionViewModel: ObservableObject {
     @Published var amount: String = ""
     @Published var date: Date = Date()
     @Published var selectedCategory: Category?
     @Published var comment: String = ""
     @Published var isLoading = false
     @Published var showAlert = false
+    @Published var errorMessage: String? = nil
+    @Published var accountCurrency: String = "₽" // По умолчанию
 
     let direction: Direction
     var mainAccountId: Int
@@ -25,7 +28,7 @@ final class CreateTransactionViewModel: ObservableObject {
     var isEdit: Bool { transactionToEdit != nil }
 
     var filteredCategories: [Category] {
-        categories.filter { $0.isIncome == direction }
+        categories.filter { $0.direction == direction }
     }
 
     init(
@@ -42,10 +45,19 @@ final class CreateTransactionViewModel: ObservableObject {
         self.transactionToEdit = transactionToEdit
 
         if let transaction = transactionToEdit {
-            self.amount = transaction.amount.description
+            // Для поля ввода суммы используем сырой Decimal → String с точкой
+            self.amount = NSDecimalNumber(decimal: transaction.amount).stringValue
             self.date = transaction.transactionDate
             self.selectedCategory = categories.first(where: { $0.id == transaction.categoryId })
             self.comment = transaction.comment ?? ""
+        } else {
+            // Устанавливаем первую подходящую категорию по умолчанию
+            let filteredCategories = categories.filter { $0.direction == direction }
+            self.selectedCategory = filteredCategories.first
+        }
+        // Загружаем актуальный accountId
+        Task {
+            await loadAccount()
         }
     }
 
@@ -81,6 +93,7 @@ final class CreateTransactionViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     isLoading = false
+                    errorMessage = error.userFriendlyNetworkMessage
                     showAlert = true
                 }
             }
@@ -98,9 +111,9 @@ final class CreateTransactionViewModel: ObservableObject {
             return
         }
         isLoading = true
-        let newId = TransactionsService.shared.nextTransactionId()
+        
         let newTransaction = Transaction(
-            id: newId,
+            id: 0, // Временный ID, сервер заменит на реальный
             accountId: mainAccountId,
             categoryId: selectedCategory.id,
             amount: amountDecimal,
@@ -119,6 +132,7 @@ final class CreateTransactionViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     isLoading = false
+                    errorMessage = error.userFriendlyNetworkMessage
                     showAlert = true
                 }
             }
@@ -138,19 +152,23 @@ final class CreateTransactionViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     isLoading = false
+                    errorMessage = error.userFriendlyNetworkMessage
                     showAlert = true
                 }
             }
         }
     }
     
-    @MainActor
     func loadAccount() async {
         do {
-            let account = try await BankAccountsService().getAccount()
-            self.mainAccountId = account.id
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else { throw AccountError.accountNotFound }
+            await MainActor.run {
+                self.mainAccountId = account.id
+                self.accountCurrency = account.currency
+            }
         } catch {
-            // обработка ошибки
+            // Ошибка загрузки аккаунта
         }
     }
 }

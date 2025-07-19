@@ -7,177 +7,286 @@
 
 import Foundation
 
+@MainActor
 final class TransactionsService: ObservableObject {
-    static let shared = TransactionsService()
-    
-    @Published private var mockTransactions: [Transaction] = [
-        Transaction(
-            id: 1,
-            accountId: 1,
-            categoryId: 3,
-            amount: Decimal(555.55),
-            transactionDate: Date(),
-            comment: "Бобик",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 2,
-            accountId: 1,
-            categoryId: 5,
-            amount: Decimal(444.00),
-            transactionDate: Date(),
-            comment: "Другу за кофе",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 3,
-            accountId: 1,
-            categoryId: 3,
-            amount: Decimal(1200.00),
-            transactionDate: Date(),
-            comment: "Бублик",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 4,
-            accountId: 1,
-            categoryId: 6,
-            amount: Decimal(9999.99),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
-            comment: "Абонемент",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 5,
-            accountId: 1,
-            categoryId: 6,
-            amount: Decimal(10000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date(),
-            comment: "Пилатес",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 6,
-            accountId: 1,
-            categoryId: 6,
-            amount: Decimal(10000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
-            comment: "Йога",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 7,
-            accountId: 1,
-            categoryId: 8,
-            amount: Decimal(3500.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 8,
-            accountId: 1,
-            categoryId: 9,
-            amount: Decimal(180000.00),
-            transactionDate: Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 9,
-            accountId: 1,
-            categoryId: 10,
-            amount: Decimal(9999.99),
-            transactionDate: Date(),
-            comment: "Продажа картины",
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 10,
-            accountId: 1,
-            categoryId: 10,
-            amount: Decimal(15000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        ),
-        Transaction(
-            id: 11,
-            accountId: 1,
-            categoryId: 11,
-            amount: Decimal(25000.00),
-            transactionDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date(),
-            comment: nil,
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        
-    ]
-    
-    private init() {}
-    
-    func todayInterval() -> DateInterval {
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
-        return DateInterval(start: startOfDay, end: endOfDay)
+    static let shared: TransactionsService = {
+        let service = TransactionsService()
+        return service
+    }()
+
+    private let localStore: TransactionsLocalStore
+    private let backupStore: TransactionsBackupStore
+
+    private init() {
+        do {
+            let localStore = try SwiftDataTransactionsLocalStore()
+            let backupStore = try SwiftDataTransactionsBackupStore()
+            self.localStore = localStore
+            self.backupStore = backupStore
+        } catch {
+            assertionFailure("Failed to initialize storage: \(error)")
+            fatalError("Critical: Unable to initialize TransactionsService storages")
+        }
+    }
+
+    // синхронизация бэкапа с сервером
+    private func syncBackupIfNeeded() async {
+        do {
+            let backupTransactions = try await backupStore.fetchAllBackupOperations()
+            var syncedIds: [Int] = []
+            for transaction in backupTransactions {
+                do {
+                    let request = TransactionRequest(from: transaction)
+                    let encoder = JSONEncoder()
+                    encoder.dateEncodingStrategy = .iso8601
+                    let bodyData = try encoder.encode(request)
+                    try await NetworkClient.shared.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
+                    syncedIds.append(transaction.id)
+                } catch {
+                    continue
+                }
+            }
+            if !syncedIds.isEmpty {
+                try await backupStore.clearBackupOperations(with: syncedIds)
+            }
+        } catch {
+            // ошибки бэкапа
+        }
+    }
+
+    // транзакции за период
+    func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
+        do {
+            await syncBackupIfNeeded()
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else {
+                throw NSError(domain: "TransactionsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No primary bank account found."])
+            }
+            let utcFormatter = DateFormatter()
+            utcFormatter.dateFormat = "yyyy-MM-dd"
+            utcFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            let startDate = utcFormatter.string(from: interval.start)
+            let endDate = utcFormatter.string(from: interval.end)
+            let endpoint = "api/v1/transactions/account/\(account.id)/period?startDate=\(startDate)&endDate=\(endDate)"
+            let responses = try await NetworkClient.shared.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
+            let transactions = responses.compactMap { response -> Transaction? in
+                let localDate = response.transactionDate.convertFromUTCToLocal()
+                return response.toTransaction(with: localDate)
+            }
+            
+            // очищаем локальное хранилище и добавляем новые данные
+            try await localStore.clearTransactions(for: interval)
+            for transaction in transactions {
+                try await localStore.addTransaction(transaction)
+            }
+            
+            return transactions
+        } catch {
+            
+            AppNetworkStatus.shared.handleNetworkError(error)
+            
+            let period = interval.start...interval.end
+            let local = try await localStore.fetchTransactions(for: period)
+            let backup = try await backupStore.fetchAllBackupOperations()
+            
+            // объединяем локальные и бекап транзакции, избегая дублирования по ID
+            var allTransactions: [Transaction] = []
+            var seenIds: Set<Int> = []
+            
+            for transaction in local {
+                if !seenIds.contains(transaction.id) {
+                    allTransactions.append(transaction)
+                    seenIds.insert(transaction.id)
+                }
+            }
+            
+            // добавляем бекап транзакции, которых нет в локальном хранилище
+            for transaction in backup {
+                if !seenIds.contains(transaction.id) && period.contains(transaction.transactionDate) {
+                    allTransactions.append(transaction)
+                    seenIds.insert(transaction.id)
+                }
+            }
+            
+            allTransactions.sort { $0.transactionDate > $1.transactionDate }
+            
+            return allTransactions
+        }
     }
     
-    func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
+    // транзакции только за сегодня
+    func getTodayTransactions() async throws -> [Transaction] {
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        let todayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: todayStart) ?? todayStart
         
-        return mockTransactions.filter { transaction in
-            interval.contains(transaction.transactionDate)
+        do {
+            await syncBackupIfNeeded()
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else {
+                throw NSError(domain: "TransactionsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No primary bank account found."])
+            }
+            
+            let utcFormatter = DateFormatter()
+            utcFormatter.dateFormat = "yyyy-MM-dd"
+            utcFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            let startDate = utcFormatter.string(from: todayStart)
+            let endDate = utcFormatter.string(from: todayEnd)
+            let endpoint = "api/v1/transactions/account/\(account.id)/period?startDate=\(startDate)&endDate=\(endDate)"
+            let responses = try await NetworkClient.shared.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
+            let transactions = responses.compactMap { response -> Transaction? in
+                let localDate = response.transactionDate.convertFromUTCToLocal()
+                return response.toTransaction(with: localDate)
+            }
+            
+            // фильтруем только сегодняшние транзакции
+            let todayTransactions = transactions.filter { transaction in
+                Calendar.current.isDate(transaction.transactionDate, inSameDayAs: todayStart)
+            }
+            
+            return todayTransactions
+        } catch {
+            AppNetworkStatus.shared.handleNetworkError(error)
+            
+            let period = todayStart...todayEnd
+            let local = try await localStore.fetchTransactions(for: period)
+            let backup = try await backupStore.fetchAllBackupOperations()
+            
+            // объединяем локальные и бекап транзакции, избегая дублирования по ID
+            var allTransactions: [Transaction] = []
+            var seenIds: Set<Int> = []
+            
+            // сначала добавляем локальные транзакции
+            for transaction in local {
+                if !seenIds.contains(transaction.id) {
+                    allTransactions.append(transaction)
+                    seenIds.insert(transaction.id)
+                }
+            }
+            
+            // затем добавляем бекап транзакции, которых нет в локальном хранилище
+            for transaction in backup {
+                if !seenIds.contains(transaction.id) && period.contains(transaction.transactionDate) {
+                    allTransactions.append(transaction)
+                    seenIds.insert(transaction.id)
+                }
+            }
+            
+            // фильтруем только сегодняшние транзакции
+            let todayTransactions = allTransactions.filter { transaction in
+                Calendar.current.isDate(transaction.transactionDate, inSameDayAs: todayStart)
+            }
+            
+            // сортируем по дате (новые сначала)
+            return todayTransactions.sorted { $0.transactionDate > $1.transactionDate }
         }
     }
     
     func createTransaction(_ transaction: Transaction) async throws {
-        
-        guard !mockTransactions.contains(where: { $0.id == transaction.id }) else {
-            throw TransactionServiceError.duplicateTransaction
-        }
-        mockTransactions.append(transaction)
-    }
-    
-    func updateTransaction(_ transaction: Transaction) async throws {
-        
-        guard let index = mockTransactions.firstIndex(where: { $0.id == transaction.id }) else {
-            throw TransactionServiceError.transactionNotFound
-        }
-        mockTransactions[index] = transaction
-    }
-    
-    func deleteTransaction(transactionId: Int) async throws {
-        
-        let initialCount = mockTransactions.count
-        mockTransactions.removeAll { $0.id == transactionId }
+        do {
+            let utcTransaction = Transaction(
+                id: transaction.id,
+                accountId: transaction.accountId,
+                categoryId: transaction.categoryId,
+                amount: transaction.amount,
+                transactionDate: transaction.transactionDate.convertToUTC(),
+                comment: transaction.comment,
+                createdAt: transaction.createdAt,
+                updatedAt: transaction.updatedAt
+            )
+            let request = TransactionRequest(from: utcTransaction)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let bodyData = try encoder.encode(request)
+            try await NetworkClient.shared.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
+            try await localStore.addTransaction(transaction)
+            try await backupStore.deleteBackupOperation(by: transaction.id)
             
-        if mockTransactions.count == initialCount {
-            throw TransactionServiceError.transactionNotFound
+            // обновляем баланс счета
+            let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
+            let isIncome = category?.isIncome ?? false
+            try await BankAccountsService.shared.updateAccountBalance(
+                accountId: transaction.accountId,
+                amount: transaction.amount,
+                isIncome: isIncome
+            )
+        } catch {
+            try await backupStore.addBackupOperation(transaction)
+            try await localStore.addTransaction(transaction)
+            
+            // обновляем баланс счета в офлайне
+            let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
+            let isIncome = category?.isIncome ?? false
+            try await BankAccountsService.shared.updateAccountBalance(
+                accountId: transaction.accountId,
+                amount: transaction.amount,
+                isIncome: isIncome
+            )
         }
     }
-    
+
+    func updateTransaction(_ transaction: Transaction) async throws {
+        do {
+            let utcTransaction = Transaction(
+                id: transaction.id,
+                accountId: transaction.accountId,
+                categoryId: transaction.categoryId,
+                amount: transaction.amount,
+                transactionDate: transaction.transactionDate.convertToUTC(),
+                comment: transaction.comment,
+                createdAt: transaction.createdAt,
+                updatedAt: transaction.updatedAt
+            )
+            let request = TransactionRequest(from: utcTransaction)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let bodyData = try encoder.encode(request)
+            try await NetworkClient.shared.request(endpointValue: "api/v1/transactions/\(transaction.id)", method: "PUT", body: bodyData)
+            try await localStore.updateTransaction(transaction)
+            try await backupStore.deleteBackupOperation(by: transaction.id)
+        } catch {
+            try await backupStore.addBackupOperation(transaction)
+            try await localStore.updateTransaction(transaction)
+        }
+    }
+
+    func deleteTransaction(transactionId: Int) async throws {
+        do {
+            try await NetworkClient.shared.request(endpointValue: "api/v1/transactions/\(transactionId)", method: "DELETE")
+            try await localStore.deleteTransaction(by: transactionId)
+            try await backupStore.deleteBackupOperation(by: transactionId)
+        } catch {
+            let transaction = try await localStore.fetchTransaction(by: transactionId)
+            if let transaction = transaction {
+                try await backupStore.addBackupOperation(transaction)
+            }
+            try await localStore.deleteTransaction(by: transactionId)
+        }
+    }
+
     func nextTransactionId() -> Int {
-        (mockTransactions.map { $0.id }.max() ?? 0) + 1
+        return 0
+    }
+
+    func todayInterval() -> DateInterval {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        guard let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay) else {
+            let fallbackEnd = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
+            return DateInterval(start: startOfDay, end: fallbackEnd)
+        }
+        return DateInterval(start: startOfDay, end: endOfDay)
     }
 }
 
 enum TransactionServiceError: Error, LocalizedError {
     case transactionNotFound
     case duplicateTransaction
+    case invalidTransactionData
     
     var errorDescription: String? {
         switch self {
         case .transactionNotFound: return "Transaction not found"
         case .duplicateTransaction: return "Transaction already exists"
+        case .invalidTransactionData: return "Invalid transaction data"
         }
     }
 }

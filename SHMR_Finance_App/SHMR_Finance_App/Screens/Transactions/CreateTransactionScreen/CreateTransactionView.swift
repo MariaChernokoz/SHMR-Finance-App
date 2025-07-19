@@ -42,7 +42,7 @@ struct CreateTransactionView: View {
                         }
                         Picker("", selection: $viewModel.selectedCategory) {
                             ForEach(viewModel.filteredCategories) { category in
-                                Text(category.name).tag(Optional(category))
+                                Text(category.name).tag(category as Category?)
                             }
                         }
                         .labelsHidden()
@@ -56,10 +56,10 @@ struct CreateTransactionView: View {
                     Spacer()
                     ZStack(alignment: .trailing) {
                         if viewModel.amount.isEmpty {
-                            Text("0 ₽").foregroundColor(.gray)
+                            Text("0 " + viewModel.accountCurrency).foregroundColor(.gray)
                         } else {
                             let amountDecimal = Decimal(string: viewModel.amount.replacingOccurrences(of: ",", with: ".")) ?? 0
-                            Text(amountDecimal.formattedAmount + " ₽").foregroundColor(.gray)
+                            Text(amountDecimal.formattedAmount + " " + viewModel.accountCurrency).foregroundColor(.gray)
                         }
                         EditAmountField(
                             amount: $viewModel.amount,
@@ -130,8 +130,8 @@ struct CreateTransactionView: View {
 
 #Preview {
     let testCategories = [
-        Category(id: 1, name: "Продукты", emoji: "🍏", isIncome: .income),
-        Category(id: 2, name: "Зарплата", emoji: "💸", isIncome: .outcome)
+        Category(id: 1, name: "Продукты", emoji: "🍏", isIncome: true),
+        Category(id: 2, name: "Зарплата", emoji: "💸", isIncome: false)
     ]
     let testTransactions = [
         Transaction(id: 1, accountId: 1, categoryId: 1, amount: 1010, transactionDate: Date(), comment: "test", createdAt: Date(), updatedAt: Date())

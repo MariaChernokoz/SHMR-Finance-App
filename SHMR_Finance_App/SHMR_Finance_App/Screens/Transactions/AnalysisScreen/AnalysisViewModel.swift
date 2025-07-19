@@ -18,6 +18,9 @@ class AnalysisViewModel {
 
     var onDataChanged: (() -> Void)?
 
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String? = nil
+
     init(direction: Direction, categories: [Category]) {
         self.direction = direction
         self.categories = categories
@@ -49,21 +52,30 @@ class AnalysisViewModel {
 
     @MainActor
     func loadTransactions() {
-        let interval = DateInterval(start: firstDate, end: secondDate)
+        isLoading = true
+        errorMessage = nil // Сбрасываем предыдущие ошибки
+        
         Task {
-            let allTransactions = try? await TransactionsService.shared.getTransactionsOfPeriod(interval: interval)
-            let filtered = (allTransactions ?? []).filter { transaction in
-                if let category = categories.first(where: { $0.id == transaction.categoryId }) {
-                    return category.isIncome == direction
+            do {
+                let interval = DateInterval(start: firstDate, end: secondDate)
+                let allTransactions = try await TransactionsService.shared.getTransactionsOfPeriod(interval: interval)
+                let filtered = (allTransactions).filter { transaction in
+                    if let category = categories.first(where: { $0.id == transaction.categoryId }) {
+                        return category.direction == direction
+                    }
+                    return false
                 }
-                return false
+                transactions = filtered
+                chosenPeriodSum = filtered.reduce(0) { $0 + $1.amount }
+                sortTransactions()
+                DispatchQueue.main.async {
+                    self.onDataChanged?()
+                }
+            } catch {
+                errorMessage = error.userFriendlyNetworkMessage
             }
-            transactions = filtered
-            chosenPeriodSum = filtered.reduce(0) { $0 + $1.amount }
-            sortTransactions()
-            DispatchQueue.main.async {
-                self.onDataChanged?()
-            }
+            
+            isLoading = false
         }
     }
 
