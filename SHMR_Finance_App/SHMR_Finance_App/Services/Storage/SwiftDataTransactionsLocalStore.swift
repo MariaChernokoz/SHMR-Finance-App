@@ -55,6 +55,17 @@ final class SwiftDataTransactionsLocalStore: TransactionsLocalStore {
         }
         try context.save()
     }
+    
+    func clearTransactions(for interval: DateInterval) async throws {
+        let descriptor = FetchDescriptor<TransactionEntity>(
+            predicate: #Predicate { $0.transactionDate >= interval.start && $0.transactionDate <= interval.end }
+        )
+        let entities = try context.fetch(descriptor)
+        for entity in entities {
+            context.delete(entity)
+        }
+        try context.save()
+    }
 }
 
 // Конвертация между Transaction и TransactionEntity

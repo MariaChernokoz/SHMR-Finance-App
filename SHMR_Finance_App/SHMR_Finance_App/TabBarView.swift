@@ -42,13 +42,18 @@ struct TabBarView: View {
             .tint(Color.accentColor)
             if networkStatus.isOffline {
                 VStack(spacing: 0) {
-                    Text("Offline mode")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .font(.system(size: 16, weight: .bold))
-                        .transition(.move(edge: .top))
+                    HStack {
+                        Spacer()
+                        Text("Offline mode")
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .font(.system(size: 12, weight: .bold))
+                            .cornerRadius(8)
+                        Spacer()
+                    }
+                    .padding(.top, 6)
                     Spacer()
                 }
                 .zIndex(1)

@@ -14,7 +14,7 @@ struct BankAccount: Codable, Identifiable {
     var balance: Decimal
     var currency: String
     let createdAt: Date
-    let updatedAt: Date
+    var updatedAt: Date
 
     // Обычный инициализатор для конвертации из BankAccountEntity
     init(id: Int, userId: Int, name: String, balance: Decimal, currency: String, createdAt: Date, updatedAt: Date) {

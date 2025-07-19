@@ -32,6 +32,9 @@ final class CategoriesService: ObservableObject {
             // Сетевой запрос для получения категорий
             let categories = try await NetworkClient.shared.fetchDecodeData(endpointValue: "api/v1/categories", dataType: Category.self)
             
+            // Уведомляем об успешном запросе
+            AppNetworkStatus.shared.handleSuccessfulRequest()
+            
             // Сохраняем категории в локальное хранилище
             for category in categories {
                 try await localStore.addCategory(category)
@@ -40,6 +43,9 @@ final class CategoriesService: ObservableObject {
             return categories
         } catch let error as NetworkError {
             print("❌ Сетевая ошибка загрузки категорий: \(error.userFriendlyMessage)")
+            
+            // Уведомляем о сетевой ошибке
+            AppNetworkStatus.shared.handleNetworkError(error)
             
             // Если сетевой запрос не удался, возвращаем из локального хранилища
             let localCategories = try await localStore.fetchAllCategories()
@@ -121,5 +127,11 @@ final class CategoriesService: ObservableObject {
         } catch {
             try await localStore.deleteCategory(by: id)
         }
+    }
+    
+    // Получить категорию по ID
+    func getCategory(by id: Int) async throws -> Category? {
+        let categories = try await getAllCategories()
+        return categories.first { $0.id == id }
     }
 }

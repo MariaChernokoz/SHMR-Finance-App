@@ -33,6 +33,9 @@ final class BankAccountsService: ObservableObject {
             // Сетевой запрос для получения аккаунтов
             let accounts = try await NetworkClient.shared.fetchDecodeData(endpointValue: "api/v1/accounts", dataType: BankAccount.self)
             
+            // Уведомляем об успешном запросе
+            AppNetworkStatus.shared.handleSuccessfulRequest()
+            
             // Сохраняем аккаунты в локальное хранилище
             for account in accounts {
                 try await localStore.addAccount(account)
@@ -41,6 +44,9 @@ final class BankAccountsService: ObservableObject {
             return accounts
         } catch let error as NetworkError {
             print("❌ Сетевая ошибка загрузки аккаунтов: \(error.userFriendlyMessage)")
+            
+            // Уведомляем о сетевой ошибке
+            AppNetworkStatus.shared.handleNetworkError(error)
             
             // Если сетевой запрос не удался, возвращаем из локального хранилища
             let localAccounts = try await localStore.fetchAllAccounts()
@@ -115,6 +121,23 @@ final class BankAccountsService: ObservableObject {
             // При ошибке — добавить в бэкап (если потребуется)
             try await localStore.deleteAccount(by: id)
         }
+    }
+    
+    // Обновить баланс счета при создании транзакции
+    func updateAccountBalance(accountId: Int, amount: Decimal, isIncome: Bool) async throws {
+        guard let account = try await localStore.fetchAccount(by: accountId) else {
+            throw AccountError.accountNotFound
+        }
+        
+        var updatedAccount = account
+        if isIncome {
+            updatedAccount.balance += amount
+        } else {
+            updatedAccount.balance -= amount
+        }
+        updatedAccount.updatedAt = Date()
+        
+        try await localStore.updateAccount(updatedAccount)
     }
 }
 

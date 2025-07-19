@@ -53,8 +53,7 @@ class TransactionsListViewModel: ObservableObject {
         errorMessage = nil // Сбрасываем предыдущие ошибки
         
         do {
-            let today = transactionsService.todayInterval()
-            async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: today)
+            async let transactionsTask = transactionsService.getTodayTransactions()
             async let categoriesTask = categoriesService.getAllCategories()
             transactions = try await transactionsTask
             categories = try await categoriesTask

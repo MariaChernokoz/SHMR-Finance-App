@@ -7,4 +7,5 @@ protocol TransactionsLocalStore {
     func addTransaction(_ transaction: Transaction) async throws
     func updateTransaction(_ transaction: Transaction) async throws
     func deleteTransaction(by id: Int) async throws
+    func clearTransactions(for interval: DateInterval) async throws
 } 
