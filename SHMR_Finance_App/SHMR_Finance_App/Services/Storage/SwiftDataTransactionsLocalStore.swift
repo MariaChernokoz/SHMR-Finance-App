@@ -68,7 +68,7 @@ final class SwiftDataTransactionsLocalStore: TransactionsLocalStore {
     }
 }
 
-// Конвертация между Transaction и TransactionEntity
+// конвертация между Transaction и TransactionEntity
 
 extension TransactionEntity {
     func toTransaction() -> Transaction {

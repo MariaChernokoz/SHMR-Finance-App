@@ -17,33 +17,9 @@ final class SwiftDataCategoriesLocalStore: CategoriesLocalStore {
         let entities = try context.fetch(FetchDescriptor<CategoryEntity>())
         return entities.map { $0.toCategory() }
     }
-
-    func addCategory(_ category: Category) async throws {
-        let entity = category.toEntity()
-        context.insert(entity)
-        try context.save()
-    }
-
-    func updateCategory(_ category: Category) async throws {
-        let descriptor = FetchDescriptor<CategoryEntity>(predicate: #Predicate { $0.id == category.id })
-        guard let entity = try context.fetch(descriptor).first else { return }
-        entity.name = category.name
-        entity.emoji = category.emoji
-        entity.isIncome = category.isIncome
-        try context.save()
-    }
-
-    func deleteCategory(by id: Int) async throws {
-        let descriptor = FetchDescriptor<CategoryEntity>(predicate: #Predicate { $0.id == id })
-        let entities = try context.fetch(descriptor)
-        for entity in entities {
-            context.delete(entity)
-        }
-        try context.save()
-    }
 }
 
-// MARK: - Конвертация между Category и CategoryEntity
+// конвертация между Category и CategoryEntity
 
 extension CategoryEntity {
     func toCategory() -> Category {

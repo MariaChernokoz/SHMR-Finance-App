@@ -60,7 +60,7 @@ struct TransactionResponse: Codable {
             return nil
         }
         
-        // Проверяем, что Decimal валидный (не NaN)
+        // Проверяем, что Decimal валидный
         guard !amountDecimal.isNaN else {
             print("Amount is NaN: \(amount)")
             return nil

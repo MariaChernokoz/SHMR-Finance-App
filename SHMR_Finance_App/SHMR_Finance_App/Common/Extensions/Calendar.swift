@@ -15,14 +15,14 @@ extension Calendar {
 }
 
 extension Date {
-    // Конвертирует локальное время в UTC
+    // локальное время в UTC
     func convertToUTC() -> Date {
         let timeZone = TimeZone.current
         let secondsFromGMT = timeZone.secondsFromGMT(for: self)
         return self.addingTimeInterval(TimeInterval(secondsFromGMT))
     }
     
-    // Конвертирует UTC в локальное время
+    // UTC в локальное время
     func convertFromUTCToLocal() -> Date {
         let timeZone = TimeZone.current
         let secondsFromGMT = timeZone.secondsFromGMT(for: self)

@@ -29,18 +29,18 @@ class AppNetworkStatus: ObservableObject {
             case .networkError, .noInternetConnection:
                 setOffline()
             default:
-                // Для других ошибок не переключаем в офлайн
+                // другие ошибки - не переключаем в офлайн
                 break
             }
         } else {
-            // Для неизвестных ошибок также считаем офлайн
+            // неизвестные ошибки - переключаем в офлайн
             setOffline()
         }
     }
     
     func handleSuccessfulRequest() {
         successfulRequestsCount += 1
-        // Если было несколько успешных запросов подряд, считаем что мы онлайн
+        // несколько успешных запросов подряд, считаем что мы онлайн
         if successfulRequestsCount >= 2 {
             setOnline()
         }

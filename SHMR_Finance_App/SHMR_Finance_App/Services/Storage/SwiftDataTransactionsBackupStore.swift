@@ -12,7 +12,15 @@ final class BackupTransactionEntity {
     var createdAt: Date
     var updatedAt: Date
 
-    init(id: Int, accountId: Int, categoryId: Int, amount: Decimal, transactionDate: Date, comment: String?, createdAt: Date, updatedAt: Date) {
+    init(id: Int,
+         accountId: Int,
+         categoryId: Int,
+         amount: Decimal,
+         transactionDate: Date,
+         comment: String?,
+         createdAt: Date,
+         updatedAt: Date)
+    {
         self.id = id
         self.accountId = accountId
         self.categoryId = categoryId
@@ -66,7 +74,7 @@ final class SwiftDataTransactionsBackupStore: TransactionsBackupStore {
     }
 }
 
-// MARK: - Конвертация между Transaction и BackupTransactionEntity
+// конвертация между Transaction и BackupTransactionEntity
 
 extension BackupTransactionEntity {
     func toTransaction() -> Transaction {

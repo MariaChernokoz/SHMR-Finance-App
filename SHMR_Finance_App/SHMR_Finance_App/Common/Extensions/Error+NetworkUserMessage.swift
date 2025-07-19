@@ -47,7 +47,6 @@ extension Error {
             return networkError.userFriendlyMessage
         }
         
-        // Для других типов ошибок
         return "Произошла ошибка. Попробуйте позже."
     }
 } 

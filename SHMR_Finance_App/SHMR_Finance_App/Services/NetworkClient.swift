@@ -43,33 +43,6 @@ final class NetworkClient {
         return decoder
     }()
     
-    func request(endpointValue: String) async throws -> Data {
-        let endpoint = urlString + endpointValue
-        
-        var request = URLRequest(url: URL(string: endpoint)!)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        try Task.checkCancellation()
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NetworkError.networkError
-            }
-            
-            guard validStatus.contains(httpResponse.statusCode) else {
-                throw handleHTTPError(statusCode: httpResponse.statusCode)
-            }
-            
-            return data
-        } catch let error as NetworkError {
-            throw error
-        } catch {
-            throw NetworkError.networkError
-        }
-    }
-    
     // получение и декодирование данных
     func fetchDecodeData<T: Codable>(endpointValue: String, dataType: T.Type) async throws -> [T] {
         do {
@@ -80,7 +53,6 @@ final class NetworkClient {
             throw error
         } catch {
             // Остальные ошибки (включая ошибки декодирования) преобразуем в decodingError
-            print("❌ Ошибка декодирования данных: \(error)")
             throw NetworkError.decodingError
         }
     }
@@ -88,13 +60,23 @@ final class NetworkClient {
     @discardableResult
     func request(endpointValue: String, method: String = "GET", body: Data? = nil) async throws -> Data {
         let endpoint = urlString + endpointValue
-        var request = URLRequest(url: URL(string: endpoint)!)
+        
+        guard let url = URL(string: endpoint) else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        if method != "GET" {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        
         if let body = body {
             request.httpBody = body
         }
+        
         try Task.checkCancellation()
         
         do {

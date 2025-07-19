@@ -56,10 +56,10 @@ struct CreateTransactionView: View {
                     Spacer()
                     ZStack(alignment: .trailing) {
                         if viewModel.amount.isEmpty {
-                            Text("0 ₽").foregroundColor(.gray)
+                            Text("0 " + viewModel.accountCurrency).foregroundColor(.gray)
                         } else {
                             let amountDecimal = Decimal(string: viewModel.amount.replacingOccurrences(of: ",", with: ".")) ?? 0
-                            Text(amountDecimal.formattedAmount + " ₽").foregroundColor(.gray)
+                            Text(amountDecimal.formattedAmount + " " + viewModel.accountCurrency).foregroundColor(.gray)
                         }
                         EditAmountField(
                             amount: $viewModel.amount,

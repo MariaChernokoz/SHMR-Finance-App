@@ -11,7 +11,14 @@ final class BankAccountEntity {
     var createdAt: Date
     var updatedAt: Date
 
-    init(id: Int, userId: Int, name: String, balance: Decimal, currency: String, createdAt: Date, updatedAt: Date) {
+    init(id: Int,
+         userId: Int,
+         name: String,
+         balance: Decimal,
+         currency: String,
+         createdAt: Date,
+         updatedAt: Date)
+    {
         self.id = id
         self.userId = userId
         self.name = name

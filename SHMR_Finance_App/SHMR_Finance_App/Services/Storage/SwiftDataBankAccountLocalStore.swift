@@ -52,7 +52,7 @@ final class SwiftDataBankAccountLocalStore: BankAccountLocalStore {
     }
 }
 
-// MARK: - Конвертация между BankAccount и BankAccountEntity
+// конвертация между BankAccount и BankAccountEntity
 
 extension BankAccountEntity {
     func toBankAccount() -> BankAccount {

@@ -8,7 +8,8 @@
 import Foundation
 import SwiftUI
 
-final class CreateTransactionViewModel: ObservableObject {
+@MainActor
+class CreateTransactionViewModel: ObservableObject {
     @Published var amount: String = ""
     @Published var date: Date = Date()
     @Published var selectedCategory: Category?
@@ -16,6 +17,7 @@ final class CreateTransactionViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var showAlert = false
     @Published var errorMessage: String? = nil
+    @Published var accountCurrency: String = "₽" // По умолчанию
 
     let direction: Direction
     var mainAccountId: Int
@@ -159,15 +161,14 @@ final class CreateTransactionViewModel: ObservableObject {
     
     func loadAccount() async {
         do {
-            //let account = try await BankAccountsService.shared.getAccount()
             let accounts = try await BankAccountsService.shared.getAllAccounts()
             guard let account = accounts.first else { throw AccountError.accountNotFound }
             await MainActor.run {
                 self.mainAccountId = account.id
-                print("Loaded account ID: \(account.id)")
+                self.accountCurrency = account.currency
             }
         } catch {
-            print("Failed to load account: \(error)")
+            // Ошибка загрузки аккаунта
         }
     }
 }

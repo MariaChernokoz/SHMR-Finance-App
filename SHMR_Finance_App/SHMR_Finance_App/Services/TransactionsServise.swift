@@ -17,7 +17,6 @@ final class TransactionsService: ObservableObject {
     private let localStore: TransactionsLocalStore
     private let backupStore: TransactionsBackupStore
 
-    // Приватный designated initializer
     private init() {
         do {
             let localStore = try SwiftDataTransactionsLocalStore()
@@ -30,7 +29,7 @@ final class TransactionsService: ObservableObject {
         }
     }
 
-    // Синхронизация бэкапа с сервером
+    // синхронизация бэкапа с сервером
     private func syncBackupIfNeeded() async {
         do {
             let backupTransactions = try await backupStore.fetchAllBackupOperations()
@@ -51,17 +50,15 @@ final class TransactionsService: ObservableObject {
                 try await backupStore.clearBackupOperations(with: syncedIds)
             }
         } catch {
-            // Игнорируем ошибки бэкапа
+            // ошибки бэкапа
         }
     }
 
     // транзакции за период
     func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
-        print("🔍 Начинаю загрузку транзакций...")
         do {
             await syncBackupIfNeeded()
             let accounts = try await BankAccountsService.shared.getAllAccounts()
-            print(" Аккаунты загружены: \(accounts.count)")
             guard let account = accounts.first else {
                 throw NSError(domain: "TransactionsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No primary bank account found."])
             }
@@ -77,7 +74,7 @@ final class TransactionsService: ObservableObject {
                 return response.toTransaction(with: localDate)
             }
             
-            // Очищаем локальное хранилище и добавляем новые данные
+            // очищаем локальное хранилище и добавляем новые данные
             try await localStore.clearTransactions(for: interval)
             for transaction in transactions {
                 try await localStore.addTransaction(transaction)
@@ -85,20 +82,17 @@ final class TransactionsService: ObservableObject {
             
             return transactions
         } catch {
-            print("❌ Ошибка загрузки: \(error)")
             
-            // Уведомляем о сетевой ошибке
             AppNetworkStatus.shared.handleNetworkError(error)
             
             let period = interval.start...interval.end
             let local = try await localStore.fetchTransactions(for: period)
             let backup = try await backupStore.fetchAllBackupOperations()
             
-            // Объединяем локальные и бекап транзакции, избегая дублирования по ID
+            // объединяем локальные и бекап транзакции, избегая дублирования по ID
             var allTransactions: [Transaction] = []
             var seenIds: Set<Int> = []
             
-            // Сначала добавляем локальные транзакции
             for transaction in local {
                 if !seenIds.contains(transaction.id) {
                     allTransactions.append(transaction)
@@ -106,7 +100,7 @@ final class TransactionsService: ObservableObject {
                 }
             }
             
-            // Затем добавляем бекап транзакции, которых нет в локальном хранилище
+            // добавляем бекап транзакции, которых нет в локальном хранилище
             for transaction in backup {
                 if !seenIds.contains(transaction.id) && period.contains(transaction.transactionDate) {
                     allTransactions.append(transaction)
@@ -114,12 +108,7 @@ final class TransactionsService: ObservableObject {
                 }
             }
             
-            // Сортируем по дате (новые сначала)
             allTransactions.sort { $0.transactionDate > $1.transactionDate }
-            
-            print("📊 Загружено транзакций из локального хранилища: \(local.count)")
-            print("📊 Загружено транзакций из бекапа: \(backup.count)")
-            print("📊 Всего транзакций: \(allTransactions.count)")
             
             return allTransactions
         }
@@ -127,17 +116,69 @@ final class TransactionsService: ObservableObject {
     
     // транзакции только за сегодня
     func getTodayTransactions() async throws -> [Transaction] {
-        let today = todayInterval()
-        let allTransactions = try await getTransactionsOfPeriod(interval: today)
-        
-        // Фильтруем по сегодняшней дате
         let todayStart = Calendar.current.startOfDay(for: Date())
-        let todayTransactions = allTransactions.filter { transaction in
-            Calendar.current.isDate(transaction.transactionDate, inSameDayAs: todayStart)
-        }
+        let todayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: todayStart) ?? todayStart
         
-        print("📊 Транзакций за сегодня: \(todayTransactions.count)")
-        return todayTransactions
+        do {
+            await syncBackupIfNeeded()
+            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            guard let account = accounts.first else {
+                throw NSError(domain: "TransactionsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No primary bank account found."])
+            }
+            
+            let utcFormatter = DateFormatter()
+            utcFormatter.dateFormat = "yyyy-MM-dd"
+            utcFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            let startDate = utcFormatter.string(from: todayStart)
+            let endDate = utcFormatter.string(from: todayEnd)
+            let endpoint = "api/v1/transactions/account/\(account.id)/period?startDate=\(startDate)&endDate=\(endDate)"
+            let responses = try await NetworkClient.shared.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
+            let transactions = responses.compactMap { response -> Transaction? in
+                let localDate = response.transactionDate.convertFromUTCToLocal()
+                return response.toTransaction(with: localDate)
+            }
+            
+            // фильтруем только сегодняшние транзакции
+            let todayTransactions = transactions.filter { transaction in
+                Calendar.current.isDate(transaction.transactionDate, inSameDayAs: todayStart)
+            }
+            
+            return todayTransactions
+        } catch {
+            AppNetworkStatus.shared.handleNetworkError(error)
+            
+            let period = todayStart...todayEnd
+            let local = try await localStore.fetchTransactions(for: period)
+            let backup = try await backupStore.fetchAllBackupOperations()
+            
+            // объединяем локальные и бекап транзакции, избегая дублирования по ID
+            var allTransactions: [Transaction] = []
+            var seenIds: Set<Int> = []
+            
+            // сначала добавляем локальные транзакции
+            for transaction in local {
+                if !seenIds.contains(transaction.id) {
+                    allTransactions.append(transaction)
+                    seenIds.insert(transaction.id)
+                }
+            }
+            
+            // затем добавляем бекап транзакции, которых нет в локальном хранилище
+            for transaction in backup {
+                if !seenIds.contains(transaction.id) && period.contains(transaction.transactionDate) {
+                    allTransactions.append(transaction)
+                    seenIds.insert(transaction.id)
+                }
+            }
+            
+            // фильтруем только сегодняшние транзакции
+            let todayTransactions = allTransactions.filter { transaction in
+                Calendar.current.isDate(transaction.transactionDate, inSameDayAs: todayStart)
+            }
+            
+            // сортируем по дате (новые сначала)
+            return todayTransactions.sorted { $0.transactionDate > $1.transactionDate }
+        }
     }
     
     func createTransaction(_ transaction: Transaction) async throws {
@@ -160,7 +201,7 @@ final class TransactionsService: ObservableObject {
             try await localStore.addTransaction(transaction)
             try await backupStore.deleteBackupOperation(by: transaction.id)
             
-            // Обновляем баланс счета
+            // обновляем баланс счета
             let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
             let isIncome = category?.isIncome ?? false
             try await BankAccountsService.shared.updateAccountBalance(
@@ -172,7 +213,7 @@ final class TransactionsService: ObservableObject {
             try await backupStore.addBackupOperation(transaction)
             try await localStore.addTransaction(transaction)
             
-            // Обновляем баланс счета даже в офлайне
+            // обновляем баланс счета в офлайне
             let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
             let isIncome = category?.isIncome ?? false
             try await BankAccountsService.shared.updateAccountBalance(
@@ -228,16 +269,10 @@ final class TransactionsService: ObservableObject {
 
     func todayInterval() -> DateInterval {
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
-        return DateInterval(start: startOfDay, end: endOfDay)
-    }
-    
-    func testInterval() -> DateInterval {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let testDate = dateFormatter.date(from: "2025-07-16")!
-        let startOfDay = Calendar.current.startOfDay(for: testDate)
-        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
+        guard let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay) else {
+            let fallbackEnd = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
+            return DateInterval(start: startOfDay, end: fallbackEnd)
+        }
         return DateInterval(start: startOfDay, end: endOfDay)
     }
 }
