@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct AccountView: View {
     @StateObject var viewModel = AccountViewModel()
@@ -46,6 +47,15 @@ struct AccountView: View {
                         isBalanceFieldFocused: $isBalanceFieldFocused,
                         viewModel: viewModel
                     )
+                    
+                    // График
+                    if !isEditing {
+                        Section {
+                            BalanceChartView(history: viewModel.balanceHistory)
+                                .frame(height: 200)
+                                .listRowBackground(Color.clear)
+                        }
+                    }
                 }
                 .listSectionSpacing(16)
                 //Клавиатура скрывается при свайпе по экрану
