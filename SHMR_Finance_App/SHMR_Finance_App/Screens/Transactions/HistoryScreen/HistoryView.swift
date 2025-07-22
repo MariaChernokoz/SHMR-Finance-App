@@ -62,6 +62,11 @@ struct HistoryView: View {
                     )
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 }
+                .onDelete { indexSet in
+                    Task {
+                        await viewModel.deleteTransactions(at: indexSet)
+                    }
+                }
             }
         }
         .listSectionSpacing(0)

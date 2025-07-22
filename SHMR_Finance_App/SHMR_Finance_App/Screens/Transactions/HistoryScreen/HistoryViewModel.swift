@@ -99,4 +99,17 @@ class HistoryViewModel: ObservableObject {
     func triggerTestError() {
         errorMessage = "Тестовая ошибка для проверки алерта"
     }
+
+    @MainActor
+    func deleteTransactions(at offsets: IndexSet) async {
+        let transactionsToDelete = offsets.map { filteredTransactions[$0] }
+        for transaction in transactionsToDelete {
+            do {
+                try await transactionsService.deleteTransaction(transactionId: transaction.id)
+            } catch {
+                errorMessage = error.userFriendlyNetworkMessage
+            }
+        }
+        await loadData()
+    }
 }

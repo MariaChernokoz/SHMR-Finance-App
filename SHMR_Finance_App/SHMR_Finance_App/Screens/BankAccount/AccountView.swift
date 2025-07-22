@@ -55,6 +55,7 @@ struct AccountView: View {
                                 .frame(height: 200)
                                 .listRowBackground(Color.clear)
                         }
+                        .padding(.top, 20)
                     }
                 }
                 .listSectionSpacing(16)
