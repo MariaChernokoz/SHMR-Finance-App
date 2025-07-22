@@ -7,6 +7,7 @@
 
 
 import UIKit
+import PieChart
 
 enum TableViewCellNames {
     static let configCell = "ConfigCell"
@@ -90,18 +91,50 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
             }
             return cell
         } else if indexPath.section == 1 {
-            // Круговая диаграмма (заглушка)
+//            // Круговая диаграмма (заглушка)
+//            let cell = UITableViewCell()
+//            cell.selectionStyle = .none
+//            cell.backgroundColor = .clear
+//            let label = UILabel()
+//            label.text = "круговая диаграмма"
+//            label.translatesAutoresizingMaskIntoConstraints = false
+//            cell.addSubview(label)
+//            NSLayoutConstraint.activate([
+//                label.centerXAnchor.constraint(equalTo: cell.centerXAnchor),
+//                label.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+//            ])
+//            return cell
+            
+            // Ячейка для круговой диаграммы
             let cell = UITableViewCell()
             cell.selectionStyle = .none
             cell.backgroundColor = .clear
-            let label = UILabel()
-            label.text = "круговая диаграмма"
-            label.translatesAutoresizingMaskIntoConstraints = false
-            cell.addSubview(label)
+
+            // Удаляем старые subviews (на случай переиспользования)
+            cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+
+            // Создаём PieChartView
+            let pieChartView = PieChartView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width - 32, height: 120))
+            pieChartView.translatesAutoresizingMaskIntoConstraints = false
+
+            // Формируем данные для PieChartView
+            let grouped = Dictionary(grouping: viewModel.transactions, by: { $0.categoryId })
+            let entities: [Entity] = grouped.compactMap { (categoryId, transactions) in
+                guard let category = viewModel.categories.first(where: { $0.id == categoryId }) else { return nil }
+                let sum = transactions.reduce(Decimal(0)) { $0 + $1.amount }
+                return Entity(value: sum, label: category.name)
+            }
+            pieChartView.entities = entities
+
+            // Добавляем PieChartView в ячейку
+            cell.contentView.addSubview(pieChartView)
             NSLayoutConstraint.activate([
-                label.centerXAnchor.constraint(equalTo: cell.centerXAnchor),
-                label.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+                pieChartView.centerXAnchor.constraint(equalTo: cell.contentView.centerXAnchor),
+                pieChartView.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+                pieChartView.widthAnchor.constraint(equalToConstant: tableView.bounds.width - 32),
+                pieChartView.heightAnchor.constraint(equalToConstant: 120)
             ])
+
             return cell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCellNames.transactionCell, for: indexPath) as! TransactionCell

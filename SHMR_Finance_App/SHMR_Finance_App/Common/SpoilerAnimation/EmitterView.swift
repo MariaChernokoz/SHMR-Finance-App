@@ -14,7 +14,10 @@ final class EmitterView: UIView {
     }
 
     override var layer: CAEmitterLayer {
-        super.layer as! CAEmitterLayer
+        guard let emitterLayer = super.layer as? CAEmitterLayer else {
+            fatalError("Expected CAEmitterLayer")
+        }
+        return emitterLayer
     }
 
     override func layoutSubviews() {

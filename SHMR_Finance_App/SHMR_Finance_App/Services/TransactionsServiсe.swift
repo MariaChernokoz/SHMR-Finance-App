@@ -73,21 +73,27 @@ final class TransactionsService: ObservableObject {
                 let localDate = response.transactionDate.convertFromUTCToLocal()
                 return response.toTransaction(with: localDate)
             }
-            
+            //print("ONLINE: Transactions from server: \(transactions)")
             // очищаем локальное хранилище и добавляем новые данные
             try await localStore.clearTransactions(for: interval)
             for transaction in transactions {
                 try await localStore.addTransaction(transaction)
             }
+            let localAfter = try await localStore.fetchTransactions(for: interval.start...interval.end)
+            //print("ONLINE: Local store after sync: \(localAfter)")
             
             return transactions
         } catch {
             
             AppNetworkStatus.shared.handleNetworkError(error)
+            //print("____________Offline mode________________")
             
             let period = interval.start...interval.end
             let local = try await localStore.fetchTransactions(for: period)
             let backup = try await backupStore.fetchAllBackupOperations()
+            
+            //print("_____ Local transactions for period: \(local)")
+            //print("_____ Backup transactions: \(backup)")
             
             // объединяем локальные и бекап транзакции, избегая дублирования по ID
             var allTransactions: [Transaction] = []
@@ -109,6 +115,8 @@ final class TransactionsService: ObservableObject {
             }
             
             allTransactions.sort { $0.transactionDate > $1.transactionDate }
+            
+            //print("__________Merged transactions for offline display: \(allTransactions)")
             
             return allTransactions
         }
@@ -142,10 +150,22 @@ final class TransactionsService: ObservableObject {
             let todayTransactions = transactions.filter { transaction in
                 Calendar.current.isDate(transaction.transactionDate, inSameDayAs: todayStart)
             }
+            //print("ONLINE: Today's transactions for UI: \(todayTransactions)")
+            
+            // очищаем локальное хранилище и добавляем новые данные
+            let interval = DateInterval(start: todayStart, end: todayEnd)
+            try await localStore.clearTransactions(for: interval)
+            for transaction in todayTransactions {
+                try await localStore.addTransaction(transaction)
+            }
+            let localAfter = try await localStore.fetchTransactions(for: todayStart...todayEnd)
+            //print("ONLINE: Local store after sync: \(localAfter)")
             
             return todayTransactions
         } catch {
             AppNetworkStatus.shared.handleNetworkError(error)
+            
+            //print("_____________Offline mode_____________")
             
             let period = todayStart...todayEnd
             let local = try await localStore.fetchTransactions(for: period)
@@ -193,6 +213,7 @@ final class TransactionsService: ObservableObject {
                 createdAt: transaction.createdAt,
                 updatedAt: transaction.updatedAt
             )
+            
             let request = TransactionRequest(from: utcTransaction)
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -200,6 +221,9 @@ final class TransactionsService: ObservableObject {
             try await NetworkClient.shared.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
             try await localStore.addTransaction(transaction)
             try await backupStore.deleteBackupOperation(by: transaction.id)
+            let todayStart = Calendar.current.startOfDay(for: Date())
+            let todayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: todayStart) ?? todayStart
+            let localAfter = try await localStore.fetchTransactions(for: todayStart...todayEnd)
             
             // обновляем баланс счета
             let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
@@ -212,6 +236,12 @@ final class TransactionsService: ObservableObject {
         } catch {
             try await backupStore.addBackupOperation(transaction)
             try await localStore.addTransaction(transaction)
+            let todayStart = Calendar.current.startOfDay(for: Date())
+            let todayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: todayStart) ?? todayStart
+            let localAfter = try await localStore.fetchTransactions(for: todayStart...todayEnd)
+            let backupAfter = try await backupStore.fetchAllBackupOperations()
+            //print("Local store after offline create: \(localAfter)")
+            //print("Backup store after offline create: \(backupAfter)")
             
             // обновляем баланс счета в офлайне
             let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
@@ -246,6 +276,7 @@ final class TransactionsService: ObservableObject {
         } catch {
             try await backupStore.addBackupOperation(transaction)
             try await localStore.updateTransaction(transaction)
+            //print("Added to backup for update: \(transaction)")
         }
     }
 
@@ -258,6 +289,7 @@ final class TransactionsService: ObservableObject {
             let transaction = try await localStore.fetchTransaction(by: transactionId)
             if let transaction = transaction {
                 try await backupStore.addBackupOperation(transaction)
+                //print("Added to backup for delete: \(transaction)")
             }
             try await localStore.deleteTransaction(by: transactionId)
         }

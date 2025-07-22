@@ -20,7 +20,6 @@ final class SwiftDataCategoriesLocalStore: CategoriesLocalStore {
 }
 
 // конвертация между Category и CategoryEntity
-
 extension CategoryEntity {
     func toCategory() -> Category {
         Category(
