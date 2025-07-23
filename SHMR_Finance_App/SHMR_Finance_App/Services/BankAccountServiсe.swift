@@ -9,7 +9,6 @@ import Foundation
 
 @MainActor
 final class BankAccountsService: ObservableObject {
-    // static let shared: BankAccountsService = { ... }() // УДАЛЕНО
 
     private let localStore: BankAccountLocalStore
     private let networkClient: NetworkClient

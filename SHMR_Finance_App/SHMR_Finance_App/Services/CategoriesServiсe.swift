@@ -9,7 +9,6 @@ import Foundation
 
 @MainActor
 final class CategoriesService {
-    // static let shared = CategoriesService() // УДАЛЕНО
     
     private let localStore: CategoriesLocalStore
     private let networkClient: NetworkClient

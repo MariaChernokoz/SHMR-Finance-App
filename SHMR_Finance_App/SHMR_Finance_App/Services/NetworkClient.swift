@@ -9,8 +9,6 @@ final class NetworkClient {
     let urlString = "https://shmr-finance.ru/"
     private let token: String
     
-    // static let shared = NetworkClient() // УДАЛЕНО
-    
     public init(token: String) {
         self.token = token
     }

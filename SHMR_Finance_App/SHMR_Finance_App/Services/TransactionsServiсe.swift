@@ -9,7 +9,6 @@ import Foundation
 
 @MainActor
 final class TransactionsService: ObservableObject {
-    // static let shared: TransactionsService = { ... }() // УДАЛЕНО
 
     private let localStore: TransactionsLocalStore
     private let backupStore: TransactionsBackupStore
