@@ -79,7 +79,7 @@ final class TransactionsService: ObservableObject {
             for transaction in transactions {
                 try await localStore.addTransaction(transaction)
             }
-            let localAfter = try await localStore.fetchTransactions(for: interval.start...interval.end)
+            _ = try await localStore.fetchTransactions(for: interval.start...interval.end)
             //print("ONLINE: Local store after sync: \(localAfter)")
             
             return transactions
@@ -158,7 +158,7 @@ final class TransactionsService: ObservableObject {
             for transaction in todayTransactions {
                 try await localStore.addTransaction(transaction)
             }
-            let localAfter = try await localStore.fetchTransactions(for: todayStart...todayEnd)
+            _ = try await localStore.fetchTransactions(for: todayStart...todayEnd)
             //print("ONLINE: Local store after sync: \(localAfter)")
             
             return todayTransactions
@@ -223,7 +223,7 @@ final class TransactionsService: ObservableObject {
             try await backupStore.deleteBackupOperation(by: transaction.id)
             let todayStart = Calendar.current.startOfDay(for: Date())
             let todayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: todayStart) ?? todayStart
-            let localAfter = try await localStore.fetchTransactions(for: todayStart...todayEnd)
+            _ = try await localStore.fetchTransactions(for: todayStart...todayEnd)
             
             // обновляем баланс счета
             let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
@@ -238,8 +238,8 @@ final class TransactionsService: ObservableObject {
             try await localStore.addTransaction(transaction)
             let todayStart = Calendar.current.startOfDay(for: Date())
             let todayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: todayStart) ?? todayStart
-            let localAfter = try await localStore.fetchTransactions(for: todayStart...todayEnd)
-            let backupAfter = try await backupStore.fetchAllBackupOperations()
+            _ = try await localStore.fetchTransactions(for: todayStart...todayEnd)
+            _ = try await backupStore.fetchAllBackupOperations()
             //print("Local store after offline create: \(localAfter)")
             //print("Backup store after offline create: \(backupAfter)")
             

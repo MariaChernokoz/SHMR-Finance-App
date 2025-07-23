@@ -17,8 +17,10 @@ class AccountViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     
     @Published var transactions: [Transaction] = []
-    @Published var balanceHistory: [BalanceHistoryPoint] = []
     @Published var categories: [Category] = []
+    
+    @Published var balanceHistory: [BalanceHistoryPoint] = []
+    @Published var balanceHistoryMonth: [BalanceHistoryPoint] = []
 
     func loadAccount() async {
         do {
@@ -26,21 +28,21 @@ class AccountViewModel: ObservableObject {
             guard let account = accounts.first else { throw AccountError.accountNotFound }
             self.bankAccount = account
 
-            // Загрузить категории
+            // Загрузка категории
             let loadedCategories = try await CategoriesService.shared.getAllCategories()
             self.categories = loadedCategories
 
-            // Загрузи все транзакции аккаунта (лучше за большой период)
+            // Загрузка транзакций
             let calendar = Calendar.current
             let today = calendar.startOfDay(for: Date())
             let startDate = calendar.date(byAdding: .day, value: -29, to: today)!
-            let allInterval = DateInterval(start: calendar.date(byAdding: .year, value: -1, to: today)!, end: today)
+            let allInterval = DateInterval(start: calendar.date(byAdding: .year, value: -2, to: today)!, end: today)
             let allTransactions = try await TransactionsService.shared.getTransactionsOfPeriod(interval: allInterval)
 
-            // Для графика нужны только последние 30 дней
+            // Последние 30 дней
             let transactionsForChart = allTransactions.filter { $0.transactionDate >= startDate }
 
-            // Сумма доходов и расходов по категориям
+            // Сумма доходов и расходов по категориям (дни)
             let sumIncomes = transactionsForChart.filter { tx in
                 if let cat = self.categories.first(where: { $0.id == tx.categoryId }) {
                     return cat.isIncome
@@ -55,11 +57,10 @@ class AccountViewModel: ObservableObject {
                 return false
             }.reduce(0.0) { $0 + (Double(truncating: $1.amount as NSNumber)) }
 
-            // Баланс на начало периода
+            // Баланс на начало периода (дни)
             let initialBalance = Double(truncating: (account.balance as NSNumber)) - sumIncomes + sumOutcomes
 
-            //print("Баланс на начало периода (\(startDate)): \(initialBalance)")
-
+            // По дням
             self.balanceHistory = Self.calculateBalanceHistory(
                 transactions: transactionsForChart,
                 startDate: startDate,
@@ -67,38 +68,18 @@ class AccountViewModel: ObservableObject {
                 initialBalance: Decimal(initialBalance),
                 categories: self.categories
             )
+
+            // По месяцам
+            self.balanceHistoryMonth = Self.calculateBalanceHistoryByMonth(
+                transactions: allTransactions,
+                endDate: today,
+                months: 24,
+                currentBalance: account.balance,
+                categories: self.categories
+            )
         } catch {
             errorMessage = error.userFriendlyNetworkMessage
         }
-    }
-    
-    static func calculateBalanceHistory(transactions: [Transaction],
-                                        startDate: Date, days: Int,
-                                        initialBalance: Decimal = 0,
-                                        categories: [Category]) -> [BalanceHistoryPoint] {
-        
-        let calendar = Calendar.current
-        var points: [BalanceHistoryPoint] = []
-        var runningBalance = initialBalance
-
-        for i in 0..<days {
-                let date = calendar.date(byAdding: .day, value: i, to: startDate)!
-                let dayTransactions = transactions.filter { calendar.isDate($0.transactionDate, inSameDayAs: date) }
-                let daySum = dayTransactions.reduce(Decimal(0)) { sum, tx in
-                    if let cat = categories.first(where: { $0.id == tx.categoryId }) {
-                        return sum + (cat.isIncome ? tx.amount : -tx.amount)
-                    } else {
-                        return sum
-                    }
-                }
-                runningBalance += daySum
-            
-            // MARK: для отладки (оставляю для проверяющих)
-                //print("Дата: \(date), Баланс: \(runningBalance), Транзакции: \(daySum)")
-            
-                points.append(BalanceHistoryPoint(date: date, balance: runningBalance))
-            }
-            return points
     }
 
     func saveAccount(newBalance: String, newCurrency: String) async {
@@ -138,4 +119,79 @@ struct BalanceHistoryPoint: Identifiable {
     let id = UUID()
     let date: Date
     let balance: Decimal
+}
+
+extension AccountViewModel {
+    static func calculateBalanceHistory(transactions: [Transaction],
+                                        startDate: Date,
+                                        days: Int, initialBalance: Decimal = 0,
+                                        categories: [Category]) -> [BalanceHistoryPoint] {
+        
+        let calendar = Calendar.current
+        var points: [BalanceHistoryPoint] = []
+        var runningBalance = initialBalance
+
+        for i in 0..<days {
+                let date = calendar.date(byAdding: .day, value: i, to: startDate)!
+                let dayTransactions = transactions.filter { calendar.isDate($0.transactionDate, inSameDayAs: date) }
+                let daySum = dayTransactions.reduce(Decimal(0)) { sum, tx in
+                    if let cat = categories.first(where: { $0.id == tx.categoryId }) {
+                        return sum + (cat.isIncome ? tx.amount : -tx.amount)
+                    } else {
+                        return sum
+                    }
+                }
+                runningBalance += daySum
+            
+            // MARK: отладка
+                //print("Дата: \(date), Баланс: \(runningBalance), Транзакции: \(daySum)")
+            
+                points.append(BalanceHistoryPoint(date: date, balance: runningBalance))
+            }
+            return points
+    }
+    
+    static func calculateBalanceHistoryByMonth(transactions: [Transaction],
+                                               endDate: Date,
+                                               months: Int,
+                                               currentBalance: Decimal,
+                                               categories: [Category]) -> [BalanceHistoryPoint] {
+        let calendar = Calendar.current
+        var points: [BalanceHistoryPoint] = []
+        var monthDates: [Date] = []
+        
+        // Собираем последние дни каждого месяца
+        for i in (0..<months).reversed() {
+            if let date = calendar.date(byAdding: .month, value: -i, to: endDate),
+               let lastDay = calendar.date(bySetting: .day, value: calendar.range(of: .day, in: .month, for: date)!.count, of: date) {
+                monthDates.append(lastDay)
+            }
+        }
+        
+        // Для каждого месяца считаем баланс на конец месяца
+        for monthEnd in monthDates {
+            // Все транзакции до конца этого месяца
+            let txs = transactions.filter { $0.transactionDate <= monthEnd }
+            // Сумма всех доходов и расходов
+            _ = txs.reduce(Decimal(0)) { sum, tx in
+                if let cat = categories.first(where: { $0.id == tx.categoryId }) {
+                    return sum + (cat.isIncome ? tx.amount : -tx.amount)
+                } else {
+                    return sum
+                }
+            }
+            
+            // Баланс на конец месяца = текущий баланс - все изменения после этого месяца
+            let afterMonthSum = transactions.filter { $0.transactionDate > monthEnd }.reduce(Decimal(0)) { sum, tx in
+                if let cat = categories.first(where: { $0.id == tx.categoryId }) {
+                    return sum + (cat.isIncome ? tx.amount : -tx.amount)
+                } else {
+                    return sum
+                }
+            }
+            let balance = currentBalance - afterMonthSum
+            points.append(BalanceHistoryPoint(date: monthEnd, balance: balance))
+        }
+        return points
+    }
 }

@@ -51,8 +51,10 @@ struct AccountView: View {
                     // График
                     if !isEditing {
                         Section {
-                            BalanceChartView(history: viewModel.balanceHistory)
-                                .frame(height: 200)
+                            BalanceChartView(
+                                historyDay: viewModel.balanceHistory,
+                                historyMonth: viewModel.balanceHistoryMonth)
+                                //.frame(height: 200)
                                 .listRowBackground(Color.clear)
                         }
                         .padding(.top, 20)
