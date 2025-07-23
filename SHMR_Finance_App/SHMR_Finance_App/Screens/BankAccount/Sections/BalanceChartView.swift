@@ -33,18 +33,32 @@ struct BalanceChartView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
-            
-            Chart(selectedPeriod == .day ? historyDay : historyMonth) { point in
-                BarMark(
-                    x: .value("Дата", point.date),
-                    y: .value("Баланс", abs(NSDecimalNumber(decimal: point.balance).doubleValue))
-                )
-                .foregroundStyle((point.balance >= 0) ? Color.accent : Color.negativeBalance)
+            ZStack {
+                if selectedPeriod == .day {
+                    Chart(historyDay) { point in
+                        BarMark(
+                            x: .value("Дата", point.date),
+                            y: .value("Баланс", abs(NSDecimalNumber(decimal: point.balance).doubleValue))
+                        )
+                        .foregroundStyle((point.balance >= 0) ? Color.accent : Color.negativeBalance)
+                    }
+                    .transition(.opacity.combined(with: .scale))
+                    .id("day")
+                } else {
+                    Chart(historyMonth) { point in
+                        BarMark(
+                            x: .value("Дата", point.date),
+                            y: .value("Баланс", abs(NSDecimalNumber(decimal: point.balance).doubleValue))
+                        )
+                        .foregroundStyle((point.balance >= 0) ? Color.accent : Color.negativeBalance)
+                    }
+                    .transition(.opacity.combined(with: .scale))
+                    .id("month")
+                }
             }
-            .id(selectedPeriod)
             .animation(.easeInOut, value: selectedPeriod)
             .chartXAxis {
-                AxisMarks(values: .stride(by: selectedPeriod == .day ? .day : .month, count: selectedPeriod == .day ? 5 : 5)) { value in
+                AxisMarks(values: .stride(by: selectedPeriod == .day ? .day : .month, count: selectedPeriod == .day ? 5 : 8)) { value in
                     AxisValueLabel(format: selectedPeriod == .day ? .dateTime.day().month(.abbreviated) : .dateTime.month().year())
                 }
             }
