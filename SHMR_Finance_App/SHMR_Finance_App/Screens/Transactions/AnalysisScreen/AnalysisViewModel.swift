@@ -15,6 +15,7 @@ class AnalysisViewModel {
     var transactions: [Transaction] = []
     let categories: [Category]
     let direction: Direction
+    var accountCurrency: String = "RUB" // по умолчанию
 
     var onDataChanged: (() -> Void)?
 
@@ -59,6 +60,10 @@ class AnalysisViewModel {
             do {
                 let interval = DateInterval(start: firstDate, end: secondDate)
                 let allTransactions = try await TransactionsService.shared.getTransactionsOfPeriod(interval: interval)
+                let accounts = try await BankAccountsService.shared.getAllAccounts()
+                if let account = accounts.first {
+                    accountCurrency = account.currency
+                }
                 let filtered = (allTransactions).filter { transaction in
                     if let category = categories.first(where: { $0.id == transaction.categoryId }) {
                         return category.direction == direction

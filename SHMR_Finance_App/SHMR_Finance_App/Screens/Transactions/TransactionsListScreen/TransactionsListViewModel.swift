@@ -15,6 +15,7 @@ class TransactionsListViewModel: ObservableObject {
     @Published var isCreatingTransaction = false
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
+    @Published var accountCurrency: String = "RUB" // по умолчанию
 
     let direction: Direction
 
@@ -55,8 +56,13 @@ class TransactionsListViewModel: ObservableObject {
         do {
             async let transactionsTask = transactionsService.getTodayTransactions()
             async let categoriesTask = categoriesService.getAllCategories()
+            async let accountTask = BankAccountsService.shared.getAllAccounts()
             transactions = try await transactionsTask
             categories = try await categoriesTask
+            let accounts = try await accountTask
+            if let account = accounts.first {
+                accountCurrency = account.currency
+            }
             isLoading = false
         } catch {
             errorMessage = error.userFriendlyNetworkMessage

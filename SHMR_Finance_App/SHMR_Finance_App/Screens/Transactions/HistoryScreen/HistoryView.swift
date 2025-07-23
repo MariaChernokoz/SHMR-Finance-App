@@ -48,7 +48,7 @@ struct HistoryView: View {
             HStack {
                 Text("Сумма")
                 Spacer()
-                Text(viewModel.totalAmount.formattedAmount + " ₽")
+                AmountTextRow(amount: viewModel.totalAmount, color: .primary, currencyCode: viewModel.accountCurrency)
             }
 
             Section(header: Text("Операции")) {
@@ -58,9 +58,15 @@ struct HistoryView: View {
                         transaction: transaction,
                         category: category,
                         direction: viewModel.direction,
-                        style: .tall
+                        style: .tall,
+                        currencyCode: viewModel.accountCurrency
                     )
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                }
+                .onDelete { indexSet in
+                    Task {
+                        await viewModel.deleteTransactions(at: indexSet)
+                    }
                 }
             }
         }

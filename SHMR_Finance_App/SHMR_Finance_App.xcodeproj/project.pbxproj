@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F68D0A282E2FC03300308958 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = F68D0A272E2FC03300308958 /* PieChart */; };
+		F68D0A2A2E2FC03300308958 /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = F68D0A292E2FC03300308958 /* Utilities */; };
+		F68D0CCD2E30836B00308958 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = F68D0CCC2E30836B00308958 /* Lottie */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F61DF5172DFCCAF4007FBA3D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +33,7 @@
 		F61DF4FD2DFCCAF2007FBA3D /* SHMR_Finance_App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SHMR_Finance_App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F61DF5162DFCCAF4007FBA3D /* SHMR_Finance_AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SHMR_Finance_AppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F61DF5202DFCCAF4007FBA3D /* SHMR_Finance_AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SHMR_Finance_AppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F68D0A252E2FB24400308958 /* Utilities */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Utilities; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +72,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F68D0A282E2FC03300308958 /* PieChart in Frameworks */,
+				F68D0A2A2E2FC03300308958 /* Utilities in Frameworks */,
+				F68D0CCD2E30836B00308958 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +102,7 @@
 				F61DF5192DFCCAF4007FBA3D /* SHMR_Finance_AppTests */,
 				F61DF5232DFCCAF4007FBA3D /* SHMR_Finance_AppUITests */,
 				F61DF4FE2DFCCAF2007FBA3D /* Products */,
+				F68D0A252E2FB24400308958 /* Utilities */,
 			);
 			sourceTree = "<group>";
 		};
@@ -125,6 +136,9 @@
 			);
 			name = SHMR_Finance_App;
 			packageProductDependencies = (
+				F68D0A272E2FC03300308958 /* PieChart */,
+				F68D0A292E2FC03300308958 /* Utilities */,
+				F68D0CCC2E30836B00308958 /* Lottie */,
 			);
 			productName = SHMR_Finance_App;
 			productReference = F61DF4FD2DFCCAF2007FBA3D /* SHMR_Finance_App.app */;
@@ -209,6 +223,8 @@
 			mainGroup = F61DF4F42DFCCAF2007FBA3D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				F68D0A262E2FC03300308958 /* XCLocalSwiftPackageReference "Utilities" */,
+				F68D0CCB2E30836B00308958 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F61DF4FE2DFCCAF2007FBA3D /* Products */;
@@ -573,6 +589,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		F68D0A262E2FC03300308958 /* XCLocalSwiftPackageReference "Utilities" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Utilities;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F68D0CCB2E30836B00308958 /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F68D0A272E2FC03300308958 /* PieChart */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PieChart;
+		};
+		F68D0A292E2FC03300308958 /* Utilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Utilities;
+		};
+		F68D0CCC2E30836B00308958 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F68D0CCB2E30836B00308958 /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F61DF4F52DFCCAF2007FBA3D /* Project object */;
 }

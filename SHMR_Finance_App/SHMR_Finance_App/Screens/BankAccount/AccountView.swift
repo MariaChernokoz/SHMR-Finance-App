@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct AccountView: View {
     @StateObject var viewModel = AccountViewModel()
@@ -46,6 +47,18 @@ struct AccountView: View {
                         isBalanceFieldFocused: $isBalanceFieldFocused,
                         viewModel: viewModel
                     )
+                    
+                    // График
+                    if !isEditing {
+                        Section {
+                            BalanceChartView(
+                                historyDay: viewModel.balanceHistory,
+                                historyMonth: viewModel.balanceHistoryMonth)
+                                //.frame(height: 200)
+                                .listRowBackground(Color.clear)
+                        }
+                        .padding(.top, 20)
+                    }
                 }
                 .listSectionSpacing(16)
                 //Клавиатура скрывается при свайпе по экрану
@@ -70,6 +83,11 @@ struct AccountView: View {
                         if isEditing {
                             Task {
                                 await viewModel.saveAccount(newBalance: editingBalance, newCurrency: editingCurrency)
+                                // После сохранения обновляем поля для отображения
+                                if let acc = viewModel.bankAccount {
+                                    editingBalance = acc.balance.formatted(.number.precision(.fractionLength(2)))
+                                    editingCurrency = acc.currency
+                                }
                             }
                         //обычный режим (просмотр)
                         } else {

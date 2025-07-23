@@ -7,6 +7,7 @@
 
 
 import UIKit
+import PieChart
 
 enum TableViewCellNames {
     static let configCell = "ConfigCell"
@@ -86,22 +87,43 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
                     self?.viewModel.setSortType(sortType)
                 }
             } else {
-                cell.configure(title: "Сумма", value: viewModel.chosenPeriodSum.formattedAmount + " ₽")
+                cell.configure(title: "Сумма", value: viewModel.chosenPeriodSum.formattedAmount + " " + currencySymbol(for: viewModel.accountCurrency))
             }
             return cell
         } else if indexPath.section == 1 {
-            // Круговая диаграмма (заглушка)
             let cell = UITableViewCell()
             cell.selectionStyle = .none
             cell.backgroundColor = .clear
-            let label = UILabel()
-            label.text = "круговая диаграмма"
-            label.translatesAutoresizingMaskIntoConstraints = false
-            cell.addSubview(label)
+            cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+
+            // Создаём PieChartView
+            let pieChartView = PieChartView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width - 32, height: 140))
+            pieChartView.translatesAutoresizingMaskIntoConstraints = false
+
+            // Формируем данные для PieChartView
+            let grouped = Dictionary(grouping: viewModel.transactions, by: { $0.categoryId })
+            let maxLabelLength = 12
+            let entities: [Entity] = grouped.compactMap { (categoryId, transactions) in
+                guard let category = viewModel.categories.first(where: { $0.id == categoryId }) else { return nil }
+                let sum = transactions.reduce(Decimal(0)) { $0 + $1.amount }
+                let label = category.name.count > maxLabelLength
+                    ? String(category.name.prefix(maxLabelLength)) + "…"
+                    : category.name
+                return Entity(value: sum, label: label)
+            }
+            // Сортируем по убыванию суммы
+            let sortedEntities = entities.sorted { $0.value > $1.value }
+            pieChartView.entities = sortedEntities
+
+            // Добавляем PieChartView в ячейку
+            cell.contentView.addSubview(pieChartView)
             NSLayoutConstraint.activate([
-                label.centerXAnchor.constraint(equalTo: cell.centerXAnchor),
-                label.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+                pieChartView.centerXAnchor.constraint(equalTo: cell.contentView.centerXAnchor),
+                pieChartView.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+                pieChartView.widthAnchor.constraint(equalTo: cell.contentView.widthAnchor, multiplier: 1),
+                    pieChartView.heightAnchor.constraint(equalTo: cell.contentView.heightAnchor, multiplier: 1)
             ])
+
             return cell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCellNames.transactionCell, for: indexPath) as! TransactionCell
@@ -109,7 +131,7 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
             let percentage = viewModel.chosenPeriodSum > 0 ? (transaction.amount / viewModel.chosenPeriodSum * 100) : 0
             let roundedPercentage = NSDecimalNumber(decimal: percentage).rounding(accordingToBehavior: nil)
             let category = viewModel.categories.first(where: { $0.id == transaction.categoryId })
-            cell.configure(with: transaction, category: category, percentage: roundedPercentage.decimalValue)
+            cell.configure(with: transaction, category: category, percentage: roundedPercentage.decimalValue, currencyCode: viewModel.accountCurrency)
             return cell
         }
     }
@@ -122,7 +144,7 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
         if indexPath.section == 0 {
             return 44 // высота под выбор дат, сортировку и сумму
         } else if indexPath.section == 1 {
-            return 120 // высота под диаграмму
+            return 140 // высота под диаграмму
         } else {
             return 60 // высота под транзакцию
         }
