@@ -9,17 +9,18 @@ import Foundation
 
 @MainActor
 final class BankAccountsService: ObservableObject {
-    static let shared: BankAccountsService = {
-        let service = BankAccountsService()
-        return service
-    }()
+    // static let shared: BankAccountsService = { ... }() // УДАЛЕНО
 
     private let localStore: BankAccountLocalStore
+    private let networkClient: NetworkClient
+    private let appNetworkStatus: AppNetworkStatus
 
-    private init() {
+    public init(networkClient: NetworkClient, appNetworkStatus: AppNetworkStatus) {
         do {
             let localStore = try SwiftDataBankAccountLocalStore()
             self.localStore = localStore
+            self.networkClient = networkClient
+            self.appNetworkStatus = appNetworkStatus
         } catch {
             assertionFailure("Failed to initialize BankAccountsService storage: \(error)")
             fatalError("Critical: Unable to initialize BankAccountsService storage")
@@ -29,9 +30,9 @@ final class BankAccountsService: ObservableObject {
     // Получить все счета
     func getAllAccounts() async throws -> [BankAccount] {
         do {
-            let accounts = try await NetworkClient.shared.fetchDecodeData(endpointValue: "api/v1/accounts", dataType: BankAccount.self)
+            let accounts = try await networkClient.fetchDecodeData(endpointValue: "api/v1/accounts", dataType: BankAccount.self)
             
-            AppNetworkStatus.shared.handleSuccessfulRequest()
+            appNetworkStatus.handleSuccessfulRequest()
             
             // cохраняем аккаунты в локальное хранилище
             for account in accounts {
@@ -41,7 +42,7 @@ final class BankAccountsService: ObservableObject {
             return accounts
         } catch let error as NetworkError {
             
-            AppNetworkStatus.shared.handleNetworkError(error)
+            appNetworkStatus.handleNetworkError(error)
             
             // если запрос не успешный, возвращаем из локального хранилища
             let localAccounts = try await localStore.fetchAllAccounts()
@@ -74,7 +75,7 @@ final class BankAccountsService: ObservableObject {
         encoder.dateEncodingStrategy = .iso8601
         let bodyData = try encoder.encode(updateRequest)
         // 4. Отправляем PUT-запрос через универсальный метод request
-        let data = try await NetworkClient.shared.request(endpointValue: endpoint, method: "PUT", body: bodyData)
+        let data = try await networkClient.request(endpointValue: endpoint, method: "PUT", body: bodyData)
         // 5. Декодируем ответ
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601

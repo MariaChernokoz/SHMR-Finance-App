@@ -22,9 +22,14 @@ class AnalysisViewModel {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
 
-    init(direction: Direction, categories: [Category]) {
+    private let transactionsService: TransactionsService
+    private let bankAccountService: BankAccountsService
+
+    init(direction: Direction, categories: [Category], transactionsService: TransactionsService, bankAccountService: BankAccountsService) {
         self.direction = direction
         self.categories = categories
+        self.transactionsService = transactionsService
+        self.bankAccountService = bankAccountService
         self.firstDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
         self.secondDate = Date()
     }
@@ -59,8 +64,8 @@ class AnalysisViewModel {
         Task {
             do {
                 let interval = DateInterval(start: firstDate, end: secondDate)
-                let allTransactions = try await TransactionsService.shared.getTransactionsOfPeriod(interval: interval)
-                let accounts = try await BankAccountsService.shared.getAllAccounts()
+                let allTransactions = try await transactionsService.getTransactionsOfPeriod(interval: interval)
+                let accounts = try await bankAccountService.getAllAccounts()
                 if let account = accounts.first {
                     accountCurrency = account.currency
                 }

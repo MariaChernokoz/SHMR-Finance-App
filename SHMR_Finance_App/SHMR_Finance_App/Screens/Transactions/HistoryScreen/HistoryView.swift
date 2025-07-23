@@ -10,11 +10,11 @@ import SwiftUI
 struct HistoryView: View {
     
     let direction: Direction
-    @StateObject var viewModel: HistoryViewModel
+    @ObservedObject var viewModel: HistoryViewModel
     
-    init(direction: Direction) {
+    init(direction: Direction, viewModel: HistoryViewModel) {
         self.direction = direction
-        _viewModel = StateObject(wrappedValue: HistoryViewModel(direction: direction))
+        self.viewModel = viewModel
     }
     
     @Environment(\.dismiss) private var dismiss
@@ -91,7 +91,12 @@ struct HistoryView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: AnalysisViewControllerWrapper(direction: direction, categories: viewModel.categories).edgesIgnoringSafeArea([.top])) {
+                NavigationLink(destination: AnalysisViewControllerWrapper(
+                    direction: direction,
+                    categories: viewModel.categories,
+                    transactionsService: viewModel.transactionsService,
+                    bankAccountService: viewModel.bankAccountService
+                ).edgesIgnoringSafeArea([.top])) {
                     Image(systemName: "document")
                         .foregroundColor(.navigation)
                 }
@@ -113,5 +118,15 @@ struct HistoryView: View {
 }
 
 #Preview {
-    HistoryView(direction: .outcome)
+    HistoryView(direction: .outcome, viewModel: HistoryViewModel(
+        direction: .outcome,
+        transactionsService: TransactionsService(
+            networkClient: NetworkClient(token: "test"),
+            appNetworkStatus: AppNetworkStatus(),
+            bankAccountsService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+            categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+        ),
+        categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+        bankAccountService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+    ))
 }

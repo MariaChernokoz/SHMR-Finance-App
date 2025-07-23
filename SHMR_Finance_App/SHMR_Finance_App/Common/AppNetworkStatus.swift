@@ -1,12 +1,11 @@
 import Foundation
 
 final class AppNetworkStatus: ObservableObject {
-    static let shared = AppNetworkStatus()
     @Published var isOffline: Bool = false
     private var lastNetworkError: Date?
     private var successfulRequestsCount: Int = 0
     
-    private init() {}
+    public init() {}
     
     func setOffline() {
         DispatchQueue.main.async {

@@ -21,11 +21,24 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let window = UIWindow(windowScene: windowScene)
 
-        //let tabBarView = TabBarView()
-
-        //window.rootViewController = UIHostingController(rootView: tabBarView)
-        window.rootViewController = SplashViewController()
-
+        // Создание зависимостей
+        let appNetworkStatus = AppNetworkStatus()
+        let networkClient = NetworkClient(token: "NC6Lmc6wwJ02KQ06urPOj4gm")
+        let categoriesService = CategoriesService(networkClient: networkClient, appNetworkStatus: appNetworkStatus)
+        let bankAccountService = BankAccountsService(networkClient: networkClient, appNetworkStatus: appNetworkStatus)
+        let transactionsService = TransactionsService(
+            networkClient: networkClient,
+            appNetworkStatus: appNetworkStatus,
+            bankAccountsService: bankAccountService,
+            categoriesService: categoriesService
+        )
+        let splashVC = SplashViewController(
+            bankAccountService: bankAccountService,
+            categoriesService: categoriesService,
+            transactionsService: transactionsService,
+            networkStatus: appNetworkStatus
+        )
+        window.rootViewController = splashVC
         self.window = window
         window.makeKeyAndVisible()
     }

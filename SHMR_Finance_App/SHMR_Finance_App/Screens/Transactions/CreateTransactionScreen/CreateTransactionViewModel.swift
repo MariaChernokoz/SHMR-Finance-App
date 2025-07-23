@@ -25,6 +25,9 @@ final class CreateTransactionViewModel: ObservableObject {
     let transactions: [Transaction]
     let transactionToEdit: Transaction?
 
+    let transactionsService: TransactionsService
+    let bankAccountService: BankAccountsService
+
     var isEdit: Bool { transactionToEdit != nil }
 
     var filteredCategories: [Category] {
@@ -36,14 +39,17 @@ final class CreateTransactionViewModel: ObservableObject {
         mainAccountId: Int,
         categories: [Category],
         transactions: [Transaction],
-        transactionToEdit: Transaction? = nil
+        transactionToEdit: Transaction? = nil,
+        transactionsService: TransactionsService,
+        bankAccountService: BankAccountsService
     ) {
         self.direction = direction
         self.mainAccountId = mainAccountId
         self.categories = categories
         self.transactions = transactions
         self.transactionToEdit = transactionToEdit
-
+        self.transactionsService = transactionsService
+        self.bankAccountService = bankAccountService
         if let transaction = transactionToEdit {
             // Для поля ввода суммы используем сырой Decimal → String с точкой
             self.amount = NSDecimalNumber(decimal: transaction.amount).stringValue
@@ -85,7 +91,7 @@ final class CreateTransactionViewModel: ObservableObject {
         )
         Task {
             do {
-                try await TransactionsService.shared.updateTransaction(updatedTransaction)
+                try await transactionsService.updateTransaction(updatedTransaction)
                 await MainActor.run {
                     isLoading = false
                     onSave()
@@ -124,7 +130,7 @@ final class CreateTransactionViewModel: ObservableObject {
         )
         Task {
             do {
-                try await TransactionsService.shared.createTransaction(newTransaction)
+                try await transactionsService.createTransaction(newTransaction)
                 await MainActor.run {
                     isLoading = false
                     onSave()
@@ -144,7 +150,7 @@ final class CreateTransactionViewModel: ObservableObject {
         isLoading = true
         Task {
             do {
-                try await TransactionsService.shared.deleteTransaction(transactionId: transaction.id)
+                try await transactionsService.deleteTransaction(transactionId: transaction.id)
                 await MainActor.run {
                     isLoading = false
                     onDelete()
@@ -161,7 +167,7 @@ final class CreateTransactionViewModel: ObservableObject {
     
     func loadAccount() async {
         do {
-            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            let accounts = try await bankAccountService.getAllAccounts()
             guard let account = accounts.first else { throw AccountError.accountNotFound }
             await MainActor.run {
                 self.mainAccountId = account.id

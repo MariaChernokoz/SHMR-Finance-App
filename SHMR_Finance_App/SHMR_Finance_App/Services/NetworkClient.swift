@@ -7,11 +7,13 @@ import Foundation
 final class NetworkClient {
     
     let urlString = "https://shmr-finance.ru/"
-    private let token = "NC6Lmc6wwJ02KQ06urPOj4gm"
+    private let token: String
     
-    static let shared = NetworkClient()
+    // static let shared = NetworkClient() // УДАЛЕНО
     
-    private init() { }
+    public init(token: String) {
+        self.token = token
+    }
 
     private var decoder: JSONDecoder = {
         let decoder = JSONDecoder()

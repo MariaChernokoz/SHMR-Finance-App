@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CreateTransactionView: View {
-    @StateObject var viewModel: CreateTransactionViewModel
+    @ObservedObject var viewModel: CreateTransactionViewModel
     let onSave: (() -> Void)?
 
     @FocusState private var isAmountFocused: Bool
@@ -142,7 +142,14 @@ struct CreateTransactionView: View {
             direction: .outcome,
             mainAccountId: 1,
             categories: testCategories,
-            transactions: testTransactions
+            transactions: testTransactions,
+            transactionsService: TransactionsService(
+                networkClient: NetworkClient(token: "test"),
+                appNetworkStatus: AppNetworkStatus(),
+                bankAccountsService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+                categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+            ),
+            bankAccountService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
         ),
         onSave: {}
     )
@@ -153,7 +160,14 @@ struct CreateTransactionView: View {
             mainAccountId: 1,
             categories: testCategories,
             transactions: testTransactions,
-            transactionToEdit: testTransactions[0]
+            transactionToEdit: testTransactions[0],
+            transactionsService: TransactionsService(
+                networkClient: NetworkClient(token: "test"),
+                appNetworkStatus: AppNetworkStatus(),
+                bankAccountsService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+                categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+            ),
+            bankAccountService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
         ),
         onSave: {}
     )

@@ -8,26 +8,45 @@
 import SwiftUI
 
 struct TabBarView: View {
-    @ObservedObject private var networkStatus = AppNetworkStatus.shared
+    let bankAccountService: BankAccountsService
+    let categoriesService: CategoriesService
+    let transactionsService: TransactionsService
+    @ObservedObject var networkStatus: AppNetworkStatus
     
     var body: some View {
         ZStack(alignment: .top) {
             TabView {
                 Group {
-                    TransactionsListView(direction: .outcome)
+                    TransactionsListView(
+                        direction: .outcome,
+                        transactionsService: transactionsService,
+                        categoriesService: categoriesService,
+                        bankAccountService: bankAccountService
+                    )
                         .tabItem {
                             Label("Расходы", image: "outcomeTabBarButton")
                         }
-                    TransactionsListView(direction: .income)
+                    TransactionsListView(
+                        direction: .income,
+                        transactionsService: transactionsService,
+                        categoriesService: categoriesService,
+                        bankAccountService: bankAccountService
+                    )
                         .tabItem {
                             Label("Доходы", image: "incomeTabBarButton")
                         }
-                    AccountView()
+                    AccountView(viewModel: AccountViewModel(
+                        bankAccountService: bankAccountService,
+                        transactionsService: transactionsService,
+                        categoriesService: categoriesService
+                    ))
                         .tabItem {
                             Label("Счет", image: "accountTabBarButton")
                         }
                         .tint(Color.navigation)
-                    CategoriesView(viewModel: CategoriesViewModel())
+                    CategoriesView(viewModel: CategoriesViewModel(
+                        categoriesService: categoriesService
+                    ))
                         .tabItem {
                             Label("Статьи", image: "categoriesTabBarButton")
                         }
@@ -63,6 +82,16 @@ struct TabBarView: View {
 }
 
 #Preview {
-    TabBarView()
+    TabBarView(
+        bankAccountService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+        categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+        transactionsService: TransactionsService(
+            networkClient: NetworkClient(token: "test"),
+            appNetworkStatus: AppNetworkStatus(),
+            bankAccountsService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+            categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+        ),
+        networkStatus: AppNetworkStatus()
+    )
 }
 

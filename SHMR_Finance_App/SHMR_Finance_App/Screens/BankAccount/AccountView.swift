@@ -9,7 +9,7 @@ import SwiftUI
 import Charts
 
 struct AccountView: View {
-    @StateObject var viewModel = AccountViewModel()
+    @StateObject var viewModel: AccountViewModel
     @FocusState var isBalanceFieldFocused: Bool
     @State private var isBalanceHidden = false
     @State private var isCurrencyDialogPresented = false
@@ -106,5 +106,14 @@ struct AccountView: View {
 }
 
 #Preview {
-    AccountView()
+    AccountView(viewModel: AccountViewModel(
+        bankAccountService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+        transactionsService: TransactionsService(
+            networkClient: NetworkClient(token: "test"),
+            appNetworkStatus: AppNetworkStatus(),
+            bankAccountsService: BankAccountsService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus()),
+            categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+        ),
+        categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())
+    ))
 }

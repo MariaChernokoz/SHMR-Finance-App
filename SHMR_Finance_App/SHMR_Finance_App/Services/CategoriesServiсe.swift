@@ -9,29 +9,26 @@ import Foundation
 
 @MainActor
 final class CategoriesService {
-    static let shared = CategoriesService()
+    // static let shared = CategoriesService() // УДАЛЕНО
     
     private let localStore: CategoriesLocalStore
-    
-    private init() {
+    private let networkClient: NetworkClient
+    private let appNetworkStatus: AppNetworkStatus
+
+    public init(networkClient: NetworkClient, appNetworkStatus: AppNetworkStatus) {
         self.localStore = try! SwiftDataCategoriesLocalStore()
+        self.networkClient = networkClient
+        self.appNetworkStatus = appNetworkStatus
     }
     
     func getAllCategories() async throws -> [Category] {
         do {
-            let categories = try await NetworkClient.shared.fetchDecodeData(endpointValue: "api/v1/categories", dataType: Category.self)
-            
-            AppNetworkStatus.shared.handleSuccessfulRequest()
-            
+            let categories = try await networkClient.fetchDecodeData(endpointValue: "api/v1/categories", dataType: Category.self)
+            appNetworkStatus.handleSuccessfulRequest()
             return categories
         } catch let error as NetworkError {
-            
-            AppNetworkStatus.shared.handleNetworkError(error)
-            
-            // eсли сетевой запрос не успешный - возвращаем из локального хранилища
+            appNetworkStatus.handleNetworkError(error)
             let localCategories = try await localStore.fetchAllCategories()
-            
-            // если локальное хранилище пустоем - создаем тестовые категории
             if localCategories.isEmpty {
                 let testCategories = [
                     Category(id: 1, name: "Продукты", emoji: "🛒", isIncome: false),
@@ -46,15 +43,12 @@ final class CategoriesService {
                     Category(id: 10, name: "Домашние животные", emoji: "🐾", isIncome: false),
                     Category(id: 11, name: "Рестораны", emoji: "🍽️", isIncome: false)
                 ]
-                
+                print("[CategoriesService] Возвращаю тестовые категории")
                 return testCategories
             }
-            
             return localCategories
         } catch {
-            // в случае любой другой ошибки - возвращаем из локального хранилища
             let localCategories = try await localStore.fetchAllCategories()
-            
             if localCategories.isEmpty {
                 let testCategories = [
                     Category(id: 1, name: "Продукты", emoji: "🛒", isIncome: false),
@@ -69,10 +63,8 @@ final class CategoriesService {
                     Category(id: 10, name: "Домашние животные", emoji: "🐾", isIncome: false),
                     Category(id: 11, name: "Рестораны", emoji: "🍽️", isIncome: false)
                 ]
-                
                 return testCategories
             }
-            
             return localCategories
         }
     }

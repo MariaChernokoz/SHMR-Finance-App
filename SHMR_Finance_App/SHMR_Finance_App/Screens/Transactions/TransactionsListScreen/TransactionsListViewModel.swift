@@ -19,11 +19,15 @@ final class TransactionsListViewModel: ObservableObject {
 
     let direction: Direction
 
-    private let transactionsService = TransactionsService.shared
-    private let categoriesService = CategoriesService.shared
+    let transactionsService: TransactionsService
+    let categoriesService: CategoriesService
+    let bankAccountService: BankAccountsService
 
-    init(direction: Direction) {
+    init(direction: Direction, transactionsService: TransactionsService, categoriesService: CategoriesService, bankAccountService: BankAccountsService) {
         self.direction = direction
+        self.transactionsService = transactionsService
+        self.categoriesService = categoriesService
+        self.bankAccountService = bankAccountService
     }
 
     var filteredTransactions: [Transaction] {
@@ -56,7 +60,7 @@ final class TransactionsListViewModel: ObservableObject {
         do {
             async let transactionsTask = transactionsService.getTodayTransactions()
             async let categoriesTask = categoriesService.getAllCategories()
-            async let accountTask = BankAccountsService.shared.getAllAccounts()
+            async let accountTask = bankAccountService.getAllAccounts()
             transactions = try await transactionsTask
             categories = try await categoriesTask
             let accounts = try await accountTask

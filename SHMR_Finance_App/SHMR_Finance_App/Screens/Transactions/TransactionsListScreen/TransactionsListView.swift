@@ -10,8 +10,13 @@ import SwiftUI
 struct TransactionsListView: View {
     @StateObject var viewModel: TransactionsListViewModel
 
-    init(direction: Direction) {
-        _viewModel = StateObject(wrappedValue: TransactionsListViewModel(direction: direction))
+    init(direction: Direction, transactionsService: TransactionsService, categoriesService: CategoriesService, bankAccountService: BankAccountsService) {
+        _viewModel = StateObject(wrappedValue: TransactionsListViewModel(
+            direction: direction,
+            transactionsService: transactionsService,
+            categoriesService: categoriesService,
+            bankAccountService: bankAccountService
+        ))
     }
 
     @ViewBuilder
@@ -94,7 +99,9 @@ struct TransactionsListView: View {
                         direction: viewModel.direction,
                         mainAccountId: viewModel.accountId,
                         categories: viewModel.categories,
-                        transactions: viewModel.transactions
+                        transactions: viewModel.transactions,
+                        transactionsService: viewModel.transactionsService,
+                        bankAccountService: viewModel.bankAccountService
                     ),
                     onSave: {
                         showCreateTransaction = false
@@ -112,7 +119,9 @@ struct TransactionsListView: View {
                         mainAccountId: viewModel.accountId,
                         categories: viewModel.categories,
                         transactions: viewModel.transactions,
-                        transactionToEdit: transaction
+                        transactionToEdit: transaction,
+                        transactionsService: viewModel.transactionsService,
+                        bankAccountService: viewModel.bankAccountService
                     ),
                     onSave: {
                         editingTransaction = nil
@@ -124,7 +133,15 @@ struct TransactionsListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: HistoryView(direction: viewModel.direction)) {
+                    NavigationLink(destination: HistoryView(
+                        direction: viewModel.direction,
+                        viewModel: HistoryViewModel(
+                            direction: viewModel.direction,
+                            transactionsService: viewModel.transactionsService,
+                            categoriesService: viewModel.categoriesService,
+                            bankAccountService: viewModel.bankAccountService
+                        )
+                    )) {
                         Image(systemName: "clock")
                             .foregroundColor(.navigation)
                     }
@@ -195,5 +212,20 @@ struct TransactionRow: View {
 }
 
 #Preview {
-    TransactionsListView(direction: .outcome)
+    let networkClient = NetworkClient(token: "test")
+    let appNetworkStatus = AppNetworkStatus()
+    let bankAccountService = BankAccountsService(networkClient: networkClient, appNetworkStatus: appNetworkStatus)
+    let categoriesService = CategoriesService(networkClient: networkClient, appNetworkStatus: appNetworkStatus)
+    let transactionsService = TransactionsService(
+        networkClient: networkClient,
+        appNetworkStatus: appNetworkStatus,
+        bankAccountsService: bankAccountService,
+        categoriesService: categoriesService
+    )
+    return TransactionsListView(
+        direction: .outcome,
+        transactionsService: transactionsService,
+        categoriesService: categoriesService,
+        bankAccountService: bankAccountService
+    )
 }

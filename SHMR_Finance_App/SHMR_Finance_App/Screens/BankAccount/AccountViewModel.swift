@@ -10,8 +10,15 @@ import SwiftUI
 
 @MainActor
 final class AccountViewModel: ObservableObject {
-    private let bankAccountService = BankAccountsService.shared
-    private let transactionsService = TransactionsService.shared
+    private let bankAccountService: BankAccountsService
+    private let transactionsService: TransactionsService
+    private let categoriesService: CategoriesService
+
+    init(bankAccountService: BankAccountsService, transactionsService: TransactionsService, categoriesService: CategoriesService) {
+        self.bankAccountService = bankAccountService
+        self.transactionsService = transactionsService
+        self.categoriesService = categoriesService
+    }
 
     @Published var bankAccount: BankAccount? = nil
     @Published var errorMessage: String? = nil
@@ -28,12 +35,12 @@ final class AccountViewModel: ObservableObject {
 
     func loadAccount() async {
         do {
-            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            let accounts = try await bankAccountService.getAllAccounts()
             guard let account = accounts.first else { throw AccountError.accountNotFound }
             self.bankAccount = account
 
             // Загрузка категории
-            let loadedCategories = try await CategoriesService.shared.getAllCategories()
+            let loadedCategories = try await categoriesService.getAllCategories()
             self.categories = loadedCategories
 
             // Загрузка транзакций
@@ -41,7 +48,7 @@ final class AccountViewModel: ObservableObject {
             let today = calendar.startOfDay(for: Date())
             let startDate = calendar.date(byAdding: .day, value: -29, to: today)!
             let allInterval = DateInterval(start: calendar.date(byAdding: .year, value: -2, to: today)!, end: today)
-            let allTransactions = try await TransactionsService.shared.getTransactionsOfPeriod(interval: allInterval)
+            let allTransactions = try await transactionsService.getTransactionsOfPeriod(interval: allInterval)
 
             // Последние 30 дней
             let transactionsForChart = allTransactions.filter { $0.transactionDate >= startDate }

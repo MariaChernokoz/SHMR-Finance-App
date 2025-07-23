@@ -9,20 +9,25 @@ import Foundation
 
 @MainActor
 final class TransactionsService: ObservableObject {
-    static let shared: TransactionsService = {
-        let service = TransactionsService()
-        return service
-    }()
+    // static let shared: TransactionsService = { ... }() // УДАЛЕНО
 
     private let localStore: TransactionsLocalStore
     private let backupStore: TransactionsBackupStore
+    private let networkClient: NetworkClient
+    private let appNetworkStatus: AppNetworkStatus
+    private let bankAccountsService: BankAccountsService
+    private let categoriesService: CategoriesService
 
-    private init() {
+    public init(networkClient: NetworkClient, appNetworkStatus: AppNetworkStatus, bankAccountsService: BankAccountsService, categoriesService: CategoriesService) {
         do {
             let localStore = try SwiftDataTransactionsLocalStore()
             let backupStore = try SwiftDataTransactionsBackupStore()
             self.localStore = localStore
             self.backupStore = backupStore
+            self.networkClient = networkClient
+            self.appNetworkStatus = appNetworkStatus
+            self.bankAccountsService = bankAccountsService
+            self.categoriesService = categoriesService
         } catch {
             assertionFailure("Failed to initialize storage: \(error)")
             fatalError("Critical: Unable to initialize TransactionsService storages")
@@ -40,7 +45,7 @@ final class TransactionsService: ObservableObject {
                     let encoder = JSONEncoder()
                     encoder.dateEncodingStrategy = .iso8601
                     let bodyData = try encoder.encode(request)
-                    try await NetworkClient.shared.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
+                    try await networkClient.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
                     syncedIds.append(transaction.id)
                 } catch {
                     continue
@@ -48,6 +53,10 @@ final class TransactionsService: ObservableObject {
             }
             if !syncedIds.isEmpty {
                 try await backupStore.clearBackupOperations(with: syncedIds)
+                // Удаляем транзакции из localStore после успешной синхронизации
+                for id in syncedIds {
+                    try await localStore.deleteTransaction(by: id)
+                }
             }
         } catch {
             // ошибки бэкапа
@@ -58,7 +67,7 @@ final class TransactionsService: ObservableObject {
     func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
         do {
             await syncBackupIfNeeded()
-            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            let accounts = try await bankAccountsService.getAllAccounts()
             guard let account = accounts.first else {
                 throw NSError(domain: "TransactionsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No primary bank account found."])
             }
@@ -68,44 +77,32 @@ final class TransactionsService: ObservableObject {
             let startDate = utcFormatter.string(from: interval.start)
             let endDate = utcFormatter.string(from: interval.end)
             let endpoint = "api/v1/transactions/account/\(account.id)/period?startDate=\(startDate)&endDate=\(endDate)"
-            let responses = try await NetworkClient.shared.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
+            let responses = try await networkClient.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
             let transactions = responses.compactMap { response -> Transaction? in
                 let localDate = response.transactionDate.convertFromUTCToLocal()
                 return response.toTransaction(with: localDate)
             }
-            //print("ONLINE: Transactions from server: \(transactions)")
             // очищаем локальное хранилище и добавляем новые данные
             try await localStore.clearTransactions(for: interval)
             for transaction in transactions {
                 try await localStore.addTransaction(transaction)
             }
             _ = try await localStore.fetchTransactions(for: interval.start...interval.end)
-            //print("ONLINE: Local store after sync: \(localAfter)")
-            
             return transactions
         } catch {
-            
-            AppNetworkStatus.shared.handleNetworkError(error)
-            //print("____________Offline mode________________")
-            
+            appNetworkStatus.handleNetworkError(error)
             let period = interval.start...interval.end
             let local = try await localStore.fetchTransactions(for: period)
             let backup = try await backupStore.fetchAllBackupOperations()
-            
-            //print("_____ Local transactions for period: \(local)")
-            //print("_____ Backup transactions: \(backup)")
-            
-            // объединяем локальные и бекап транзакции, избегая дублирования по ID
+            // объединяем локальные и бэкап транзакции, избегая дублирования по ID
             var allTransactions: [Transaction] = []
             var seenIds: Set<Int> = []
-            
             for transaction in local {
                 if !seenIds.contains(transaction.id) {
                     allTransactions.append(transaction)
                     seenIds.insert(transaction.id)
                 }
             }
-            
             // добавляем бекап транзакции, которых нет в локальном хранилище
             for transaction in backup {
                 if !seenIds.contains(transaction.id) && period.contains(transaction.transactionDate) {
@@ -113,11 +110,7 @@ final class TransactionsService: ObservableObject {
                     seenIds.insert(transaction.id)
                 }
             }
-            
             allTransactions.sort { $0.transactionDate > $1.transactionDate }
-            
-            //print("__________Merged transactions for offline display: \(allTransactions)")
-            
             return allTransactions
         }
     }
@@ -129,7 +122,7 @@ final class TransactionsService: ObservableObject {
         
         do {
             await syncBackupIfNeeded()
-            let accounts = try await BankAccountsService.shared.getAllAccounts()
+            let accounts = try await bankAccountsService.getAllAccounts()
             guard let account = accounts.first else {
                 throw NSError(domain: "TransactionsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "No primary bank account found."])
             }
@@ -140,7 +133,7 @@ final class TransactionsService: ObservableObject {
             let startDate = utcFormatter.string(from: todayStart)
             let endDate = utcFormatter.string(from: todayEnd)
             let endpoint = "api/v1/transactions/account/\(account.id)/period?startDate=\(startDate)&endDate=\(endDate)"
-            let responses = try await NetworkClient.shared.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
+            let responses = try await networkClient.fetchDecodeData(endpointValue: endpoint, dataType: TransactionResponse.self)
             let transactions = responses.compactMap { response -> Transaction? in
                 let localDate = response.transactionDate.convertFromUTCToLocal()
                 return response.toTransaction(with: localDate)
@@ -163,7 +156,7 @@ final class TransactionsService: ObservableObject {
             
             return todayTransactions
         } catch {
-            AppNetworkStatus.shared.handleNetworkError(error)
+            appNetworkStatus.handleNetworkError(error)
             
             //print("_____________Offline mode_____________")
             
@@ -218,7 +211,7 @@ final class TransactionsService: ObservableObject {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let bodyData = try encoder.encode(request)
-            try await NetworkClient.shared.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
+            try await networkClient.request(endpointValue: "api/v1/transactions", method: "POST", body: bodyData)
             try await localStore.addTransaction(transaction)
             try await backupStore.deleteBackupOperation(by: transaction.id)
             let todayStart = Calendar.current.startOfDay(for: Date())
@@ -226,9 +219,9 @@ final class TransactionsService: ObservableObject {
             _ = try await localStore.fetchTransactions(for: todayStart...todayEnd)
             
             // обновляем баланс счета
-            let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
+            let category = try await categoriesService.getCategory(by: transaction.categoryId)
             let isIncome = category?.isIncome ?? false
-            try await BankAccountsService.shared.updateAccountBalance(
+            try await bankAccountsService.updateAccountBalance(
                 accountId: transaction.accountId,
                 amount: transaction.amount,
                 isIncome: isIncome
@@ -244,9 +237,9 @@ final class TransactionsService: ObservableObject {
             //print("Backup store after offline create: \(backupAfter)")
             
             // обновляем баланс счета в офлайне
-            let category = try await CategoriesService.shared.getCategory(by: transaction.categoryId)
+            let category = try await categoriesService.getCategory(by: transaction.categoryId)
             let isIncome = category?.isIncome ?? false
-            try await BankAccountsService.shared.updateAccountBalance(
+            try await bankAccountsService.updateAccountBalance(
                 accountId: transaction.accountId,
                 amount: transaction.amount,
                 isIncome: isIncome
@@ -270,7 +263,7 @@ final class TransactionsService: ObservableObject {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             let bodyData = try encoder.encode(request)
-            try await NetworkClient.shared.request(endpointValue: "api/v1/transactions/\(transaction.id)", method: "PUT", body: bodyData)
+            try await networkClient.request(endpointValue: "api/v1/transactions/\(transaction.id)", method: "PUT", body: bodyData)
             try await localStore.updateTransaction(transaction)
             try await backupStore.deleteBackupOperation(by: transaction.id)
         } catch {
@@ -282,7 +275,7 @@ final class TransactionsService: ObservableObject {
 
     func deleteTransaction(transactionId: Int) async throws {
         do {
-            try await NetworkClient.shared.request(endpointValue: "api/v1/transactions/\(transactionId)", method: "DELETE")
+            try await networkClient.request(endpointValue: "api/v1/transactions/\(transactionId)", method: "DELETE")
             try await localStore.deleteTransaction(by: transactionId)
             try await backupStore.deleteBackupOperation(by: transactionId)
         } catch {

@@ -19,8 +19,8 @@ final class AnalysisViewController: UIViewController, UITableViewDataSource, UIT
     let viewModel: AnalysisViewModel
     private var loadingSpinner: UIActivityIndicatorView?
 
-    init(direction: Direction, categories: [Category]) {
-        self.viewModel = AnalysisViewModel(direction: direction, categories: categories)
+    init(direction: Direction, categories: [Category], transactionsService: TransactionsService, bankAccountService: BankAccountsService) {
+        self.viewModel = AnalysisViewModel(direction: direction, categories: categories, transactionsService: transactionsService, bankAccountService: bankAccountService)
         super.init(nibName: nil, bundle: nil)
     }
 

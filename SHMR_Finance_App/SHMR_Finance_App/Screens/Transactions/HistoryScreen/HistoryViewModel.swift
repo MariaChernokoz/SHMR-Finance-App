@@ -36,15 +36,19 @@ final class HistoryViewModel: ObservableObject {
     @Published var direction: Direction {
         didSet { filterTransactions() }
     }
-    init(direction: Direction) {
+    init(direction: Direction, transactionsService: TransactionsService, categoriesService: CategoriesService, bankAccountService: BankAccountsService) {
         self.direction = direction
+        self.transactionsService = transactionsService
+        self.categoriesService = categoriesService
+        self.bankAccountService = bankAccountService
     }
     @Published var filteredTransactions: [Transaction] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
 
-    private let transactionsService = TransactionsService.shared
-    private let categoriesService = CategoriesService.shared
+    let transactionsService: TransactionsService
+    let categoriesService: CategoriesService
+    let bankAccountService: BankAccountsService
     
     @MainActor
     func loadData() async {
@@ -55,7 +59,7 @@ final class HistoryViewModel: ObservableObject {
             let interval = DateInterval(start: startDate, end: endDate)
             async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: interval)
             async let categoriesTask = categoriesService.getAllCategories()
-            async let accountTask = BankAccountsService.shared.getAllAccounts()
+            async let accountTask = bankAccountService.getAllAccounts()
             transactions = try await transactionsTask
             categories = try await categoriesTask
             let accounts = try await accountTask

@@ -101,5 +101,5 @@ struct SearchBar: View {
 }
 
 #Preview {
-    CategoriesView(viewModel: CategoriesViewModel())
+    CategoriesView(viewModel: CategoriesViewModel(categoriesService: CategoriesService(networkClient: NetworkClient(token: "test"), appNetworkStatus: AppNetworkStatus())))
 }
