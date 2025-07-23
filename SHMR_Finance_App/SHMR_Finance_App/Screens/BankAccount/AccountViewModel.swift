@@ -103,9 +103,7 @@ class AccountViewModel: ObservableObject {
 
         do {
             try await bankAccountService.saveAccount(account)
-            await MainActor.run {
-                self.bankAccount = account
-            }
+            await loadAccount()
         } catch {
             await MainActor.run {
                 errorMessage = error.userFriendlyNetworkMessage

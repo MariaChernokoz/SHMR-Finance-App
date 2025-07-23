@@ -45,42 +45,11 @@ final class BankAccountsService: ObservableObject {
             
             // если запрос не успешный, возвращаем из локального хранилища
             let localAccounts = try await localStore.fetchAllAccounts()
-            
-//            // если локальное хранилище тоже пустое, создаем тестовый аккаунт
-//            if localAccounts.isEmpty {
-//                let testAccount = BankAccount(
-//                    id: 1,
-//                    userId: 1,
-//                    name: "Основной счет",
-//                    balance: Decimal(100000),
-//                    currency: "₽",
-//                    createdAt: Date(),
-//                    updatedAt: Date()
-//                )
-//                try await localStore.addAccount(testAccount)
-//                return [testAccount]
-//            }
-            
             return localAccounts
             
         } catch {
             // в случае любой другой ошибки - возвращаем из локального хранилища
             let localAccounts = try await localStore.fetchAllAccounts()
-            
-//            if localAccounts.isEmpty {
-//                let testAccount = BankAccount(
-//                    id: 1,
-//                    userId: 1,
-//                    name: "Основной счет",
-//                    balance: Decimal(100000),
-//                    currency: "₽",
-//                    createdAt: Date(),
-//                    updatedAt: Date()
-//                )
-//                try await localStore.addAccount(testAccount)
-//                return [testAccount]
-//            }
-            
             return localAccounts
         }
     }
@@ -92,11 +61,26 @@ final class BankAccountsService: ObservableObject {
 
     // добавить/обновить аккаунт
     func saveAccount(_ account: BankAccount) async throws {
-        do {
-            try await localStore.updateAccount(account)
-        } catch {
-            try await localStore.updateAccount(account)
-        }
+        // 1. Подготовить тело запроса
+        let updateRequest = AccountUpdateRequest(
+            name: account.name,
+            balance: NSDecimalNumber(decimal: account.balance).stringValue,
+            currency: account.currency
+        )
+        // 2. Сформировать endpoint
+        let endpoint = "api/v1/accounts/\(account.id)"
+        // 3. Кодируем тело запроса
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let bodyData = try encoder.encode(updateRequest)
+        // 4. Отправляем PUT-запрос через универсальный метод request
+        let data = try await NetworkClient.shared.request(endpointValue: endpoint, method: "PUT", body: bodyData)
+        // 5. Декодируем ответ
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let updatedAccount = try decoder.decode(BankAccount.self, from: data)
+        // 6. Обновляем локальное хранилище
+        try await localStore.updateAccount(updatedAccount)
     }
 
     // удалить аккаунт

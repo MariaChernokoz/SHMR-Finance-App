@@ -19,7 +19,7 @@ struct TransactionsListView: View {
         HStack {
             Text("Сумма")
             Spacer()
-            AmountTextRow(amount: viewModel.totalAmount, color: .primary)
+            AmountTextRow(amount: viewModel.totalAmount, color: .primary, currencyCode: viewModel.accountCurrency)
         }
     }
     
@@ -47,7 +47,8 @@ struct TransactionsListView: View {
                     transaction: transaction,
                     category: category,
                     direction: viewModel.direction,
-                    style: .regular
+                    style: .regular,
+                    currencyCode: viewModel.accountCurrency
                 )
                 .onTapGesture {
                     editingTransaction = transaction
@@ -148,6 +149,7 @@ struct TransactionRow: View {
     let category: Category?
     let direction: Direction
     var style: TransactionRowStyle
+    let currencyCode: String
 
     var body: some View {
         let rowContent = HStack {
@@ -161,17 +163,22 @@ struct TransactionRow: View {
                     .padding(.trailing, 8)
             }
             VStack(alignment: .leading, spacing: style == .tall ? 3 : 0) {
-                Text(category?.name ?? "неизвестная категория")
-                
-                if let comment = transaction.comment {
-                    Text(comment)
-                        .font(.system(size: style == .tall ? 15 : 13))
-                        .foregroundColor(.gray)
+                if let comment = transaction.comment, !comment.isEmpty {
+                    VStack(alignment: .leading, spacing: style == .tall ? 3 : 0) {
+                        Text(category?.name ?? "неизвестная категория")
+                        Text(comment)
+                            .font(.system(size: style == .tall ? 15 : 13))
+                            .foregroundColor(.gray)
+                    }
+                } else {
+                    // Центрируем по высоте, если комментария нет
+                    Text(category?.name ?? "неизвестная категория")
+                        .frame(maxHeight: .infinity, alignment: .center)
                 }
             }
             Spacer()
             VStack (alignment: .trailing){
-                AmountTextRow(amount: transaction.amount, color: .primary)
+                AmountTextRow(amount: transaction.amount, color: .primary, currencyCode: currencyCode)
                 if style == .tall {
                     Text(transaction.transactionDate, style: .time)
                 }

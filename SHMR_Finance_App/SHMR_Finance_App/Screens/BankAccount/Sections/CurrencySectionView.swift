@@ -55,12 +55,5 @@ struct CurrencySectionView: View {
         .listRowBackground(isEditing ? Color.white : Color("AccentColor").opacity(0.2))
     }
 
-    private func currencySymbol(for code: String) -> String {
-        switch code {
-        case "RUB": return "₽"
-        case "USD": return "$"
-        case "EUR": return "€"
-        default: return code
-        }
-    }
+    // Используем глобальную функцию currencySymbol(for:) из AmountFormatter.swift
 }

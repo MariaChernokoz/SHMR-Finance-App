@@ -83,6 +83,11 @@ struct AccountView: View {
                         if isEditing {
                             Task {
                                 await viewModel.saveAccount(newBalance: editingBalance, newCurrency: editingCurrency)
+                                // После сохранения обновляем поля для отображения
+                                if let acc = viewModel.bankAccount {
+                                    editingBalance = acc.balance.formatted(.number.precision(.fractionLength(2)))
+                                    editingCurrency = acc.currency
+                                }
                             }
                         //обычный режим (просмотр)
                         } else {

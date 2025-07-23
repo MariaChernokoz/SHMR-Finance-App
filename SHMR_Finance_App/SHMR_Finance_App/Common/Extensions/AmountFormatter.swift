@@ -32,3 +32,12 @@ extension Decimal {
         return formatter.string(for: self) ?? "0"
     }
 }
+
+func currencySymbol(for code: String) -> String {
+    switch code.uppercased() {
+    case "RUB": return "₽"
+    case "USD": return "$"
+    case "EUR": return "€"
+    default: return code
+    }
+}

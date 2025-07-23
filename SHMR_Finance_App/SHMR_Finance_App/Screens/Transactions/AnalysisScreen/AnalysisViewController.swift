@@ -87,7 +87,7 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
                     self?.viewModel.setSortType(sortType)
                 }
             } else {
-                cell.configure(title: "Сумма", value: viewModel.chosenPeriodSum.formattedAmount + " ₽")
+                cell.configure(title: "Сумма", value: viewModel.chosenPeriodSum.formattedAmount + " " + currencySymbol(for: viewModel.accountCurrency))
             }
             return cell
         } else if indexPath.section == 1 {
@@ -131,7 +131,7 @@ class AnalysisViewController: UIViewController, UITableViewDataSource, UITableVi
             let percentage = viewModel.chosenPeriodSum > 0 ? (transaction.amount / viewModel.chosenPeriodSum * 100) : 0
             let roundedPercentage = NSDecimalNumber(decimal: percentage).rounding(accordingToBehavior: nil)
             let category = viewModel.categories.first(where: { $0.id == transaction.categoryId })
-            cell.configure(with: transaction, category: category, percentage: roundedPercentage.decimalValue)
+            cell.configure(with: transaction, category: category, percentage: roundedPercentage.decimalValue, currencyCode: viewModel.accountCurrency)
             return cell
         }
     }

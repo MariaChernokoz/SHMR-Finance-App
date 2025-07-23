@@ -21,6 +21,7 @@ class HistoryViewModel: ObservableObject {
         let today = Calendar.current.startOfDay(for: Date())
         return Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: today) ?? Date()
     }()
+    @Published var accountCurrency: String = "RUB" // по умолчанию
     func validateDates() {
         if startDate > endDate {
             endDate = startDate
@@ -54,8 +55,13 @@ class HistoryViewModel: ObservableObject {
             let interval = DateInterval(start: startDate, end: endDate)
             async let transactionsTask = transactionsService.getTransactionsOfPeriod(interval: interval)
             async let categoriesTask = categoriesService.getAllCategories()
+            async let accountTask = BankAccountsService.shared.getAllAccounts()
             transactions = try await transactionsTask
             categories = try await categoriesTask
+            let accounts = try await accountTask
+            if let account = accounts.first {
+                accountCurrency = account.currency
+            }
             filterTransactions()
             isLoading = false
         } catch {
