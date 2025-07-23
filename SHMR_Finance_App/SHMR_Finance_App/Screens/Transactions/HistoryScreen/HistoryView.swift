@@ -18,12 +18,14 @@ struct HistoryView: View {
     }
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     
     private var HistoryHeader: some View {
         Section {} header: {
             Text("Моя история")
                 .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(.black)
+                //.foregroundStyle(.black)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
                 .padding(.bottom, 9)
                 .textCase(nil)
                 .listRowBackground(Color.clear)

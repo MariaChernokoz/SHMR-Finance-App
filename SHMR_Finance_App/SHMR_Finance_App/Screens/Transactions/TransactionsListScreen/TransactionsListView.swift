@@ -30,12 +30,14 @@ struct TransactionsListView: View {
     
     @State private var showCreateTransaction = false
     @State private var editingTransaction: Transaction? = nil
+    @Environment(\.colorScheme) var colorScheme
     
     private var titleSection: some View {
         Section {} header: {
             Text(viewModel.title)
                 .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(.black)
+                //.foregroundStyle(.black)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
                 .padding(.bottom, 12)
                 .textCase(nil)
                 .listRowBackground(Color.clear)
@@ -65,13 +67,18 @@ struct TransactionsListView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    List {
-                        titleSection
-                        totalAmountSection()
-                        operationsSection
+                if viewModel.isLoading && viewModel.filteredTransactions.isEmpty {
+                    ProgressView()
+                        .tint(.navigation)
+                } else {
+                    VStack(alignment: .leading, spacing: 5) {
+                        List {
+                            titleSection
+                            totalAmountSection()
+                            operationsSection
+                        }
+                        .listSectionSpacing(10)
                     }
-                    .listSectionSpacing(10)
                 }
                 VStack {
                     Spacer()

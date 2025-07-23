@@ -13,6 +13,7 @@ struct AccountView: View {
     @FocusState var isBalanceFieldFocused: Bool
     @State private var isBalanceHidden = false
     @State private var isCurrencyDialogPresented = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         NavigationStack {
@@ -21,7 +22,8 @@ struct AccountView: View {
                     Section {} header: {
                         Text("Мой счет")
                             .font(.system(size: 34, weight: .bold))
-                            .foregroundStyle(.black)
+                            //.foregroundStyle(.black)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
                             .padding(.bottom, 12)
                             .textCase(nil)
                             .listRowBackground(Color.clear)

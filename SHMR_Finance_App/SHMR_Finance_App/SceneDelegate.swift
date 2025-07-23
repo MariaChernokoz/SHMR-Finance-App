@@ -38,6 +38,21 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             transactionsService: transactionsService,
             networkStatus: appNetworkStatus
         )
+        
+        splashVC.onFinish = { [weak self] in
+            // Создаём основной SwiftUI-интерфейс
+            let rootView = RootView(
+                bankAccountService: bankAccountService,
+                categoriesService: categoriesService,
+                transactionsService: transactionsService,
+                networkStatus: appNetworkStatus
+            )
+            // Переключаем rootViewController на основной интерфейс
+            DispatchQueue.main.async {
+                self?.window?.rootViewController = UIHostingController(rootView: rootView)
+            }
+        }
+
         window.rootViewController = splashVC
         self.window = window
         window.makeKeyAndVisible()

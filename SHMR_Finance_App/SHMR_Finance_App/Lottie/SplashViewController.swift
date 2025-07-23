@@ -15,6 +15,8 @@ final class SplashViewController: UIViewController {
     private let categoriesService: CategoriesService
     private let transactionsService: TransactionsService
     private let networkStatus: AppNetworkStatus
+    
+    var onFinish: (() -> Void)?
 
     init(bankAccountService: BankAccountsService, categoriesService: CategoriesService, transactionsService: TransactionsService, networkStatus: AppNetworkStatus) {
         self.bankAccountService = bankAccountService
@@ -41,7 +43,7 @@ final class SplashViewController: UIViewController {
 
         animationView.play { [weak self] finished in
             if finished {
-                self?.showMainApp()
+                self?.onFinish?()
             }
         }
     }

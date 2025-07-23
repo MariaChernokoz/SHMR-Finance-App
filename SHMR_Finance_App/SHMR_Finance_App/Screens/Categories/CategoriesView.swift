@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CategoriesView: View {
     @StateObject var viewModel: CategoriesViewModel
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         NavigationStack {
@@ -18,7 +19,8 @@ struct CategoriesView: View {
                         Section {} header: {
                             Text("Мои статьи")
                                 .font(.system(size: 34, weight: .bold))
-                                .foregroundStyle(.black)
+                                //.foregroundStyle(.black)
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
                                 .textCase(nil)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 40, leading: 0, bottom: 10, trailing: 0))

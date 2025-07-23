@@ -14,6 +14,8 @@ struct CreateTransactionView: View {
     var deleteButtonTitle: String {
         viewModel.direction == .income ? "Удалить доход" : "Удалить расход"
     }
+    
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
@@ -21,7 +23,8 @@ struct CreateTransactionView: View {
                 Section {} header: {
                     Text(navTitle)
                         .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(.black)
+                        //.foregroundStyle(.black)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
                         .padding(.bottom, -8)
                         .textCase(nil)
                         .listRowBackground(Color.clear)
