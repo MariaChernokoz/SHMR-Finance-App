@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class AccountViewModel: ObservableObject {
+final class AccountViewModel: ObservableObject {
     private let bankAccountService = BankAccountsService.shared
     private let transactionsService = TransactionsService.shared
 
@@ -21,6 +21,10 @@ class AccountViewModel: ObservableObject {
     
     @Published var balanceHistory: [BalanceHistoryPoint] = []
     @Published var balanceHistoryMonth: [BalanceHistoryPoint] = []
+    // Переносим состояния из View
+    @Published var isEditing: Bool = false
+    @Published var editingBalance: String = ""
+    @Published var editingCurrency: String = ""
 
     func loadAccount() async {
         do {

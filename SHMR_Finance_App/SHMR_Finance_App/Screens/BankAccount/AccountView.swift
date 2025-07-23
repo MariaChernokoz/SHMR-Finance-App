@@ -10,9 +10,6 @@ import Charts
 
 struct AccountView: View {
     @StateObject var viewModel = AccountViewModel()
-    @State var isEditing = false
-    @State var editingBalance: String = ""
-    @State var editingCurrency: String = ""
     @FocusState var isBalanceFieldFocused: Bool
     @State private var isBalanceHidden = false
     @State private var isCurrencyDialogPresented = false
@@ -32,8 +29,8 @@ struct AccountView: View {
                     }
                     //На экране "Мой счет" добавляем строку с балансом
                     BalanceSectionView(
-                        isEditing: $isEditing,
-                        editingBalance: $editingBalance,
+                        isEditing: $viewModel.isEditing,
+                        editingBalance: $viewModel.editingBalance,
                         isBalanceFieldFocused: $isBalanceFieldFocused,
                         isBalanceHidden: $isBalanceHidden,
                         viewModel: viewModel
@@ -41,15 +38,15 @@ struct AccountView: View {
 
                     //На экране "Мой счет" добавляем строку с валютой
                     CurrencySectionView(
-                        isEditing: $isEditing,
-                        editingCurrency: $editingCurrency,
+                        isEditing: $viewModel.isEditing,
+                        editingCurrency: $viewModel.editingCurrency,
                         isCurrencyDialogPresented: $isCurrencyDialogPresented,
                         isBalanceFieldFocused: $isBalanceFieldFocused,
                         viewModel: viewModel
                     )
                     
                     // График
-                    if !isEditing {
+                    if !viewModel.isEditing {
                         Section {
                             BalanceChartView(
                                 historyDay: viewModel.balanceHistory,
@@ -78,25 +75,25 @@ struct AccountView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     //Кнопка "Редактировать" в навбаре
-                    Button(isEditing ? "Сохранить" : "Редактировать") {
+                    Button(viewModel.isEditing ? "Сохранить" : "Редактировать") {
                         //режим редактирования
-                        if isEditing {
+                        if viewModel.isEditing {
                             Task {
-                                await viewModel.saveAccount(newBalance: editingBalance, newCurrency: editingCurrency)
+                                await viewModel.saveAccount(newBalance: viewModel.editingBalance, newCurrency: viewModel.editingCurrency)
                                 // После сохранения обновляем поля для отображения
                                 if let acc = viewModel.bankAccount {
-                                    editingBalance = acc.balance.formatted(.number.precision(.fractionLength(2)))
-                                    editingCurrency = acc.currency
+                                    viewModel.editingBalance = acc.balance.formatted(.number.precision(.fractionLength(2)))
+                                    viewModel.editingCurrency = acc.currency
                                 }
                             }
                         //обычный режим (просмотр)
                         } else {
                             if let acc = viewModel.bankAccount {
-                                editingBalance = acc.balance.formatted(.number.precision(.fractionLength(2)))
-                                editingCurrency = acc.currency
+                                viewModel.editingBalance = acc.balance.formatted(.number.precision(.fractionLength(2)))
+                                viewModel.editingCurrency = acc.currency
                             }
                         }
-                        isEditing.toggle()
+                        viewModel.isEditing.toggle()
                     }
                     .foregroundColor(.navigation)
                 }

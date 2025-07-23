@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class CategoriesViewModel: ObservableObject {
+final class CategoriesViewModel: ObservableObject {
     
     @Published var categories: [Category] = []
     @Published var errorMessage: String? = nil

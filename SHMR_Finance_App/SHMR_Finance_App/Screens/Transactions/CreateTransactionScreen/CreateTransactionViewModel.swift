@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class CreateTransactionViewModel: ObservableObject {
+final class CreateTransactionViewModel: ObservableObject {
     @Published var amount: String = ""
     @Published var date: Date = Date()
     @Published var selectedCategory: Category?

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class HistoryViewModel: ObservableObject {
+final class HistoryViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var categories: [Category] = []
     @Published var startDate: Date = Calendar.current.date(

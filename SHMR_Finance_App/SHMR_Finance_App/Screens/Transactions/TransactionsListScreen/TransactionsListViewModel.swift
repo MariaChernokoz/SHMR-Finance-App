@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class TransactionsListViewModel: ObservableObject {
+final class TransactionsListViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var categories: [Category] = []
     @Published var isCreatingTransaction = false

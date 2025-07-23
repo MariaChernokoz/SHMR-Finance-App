@@ -14,7 +14,7 @@ enum TableViewCellNames {
     static let transactionCell = "TransactionCell"
 }
 
-class AnalysisViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+final class AnalysisViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     let tableView = UITableView(frame: .zero, style: .insetGrouped)
     let viewModel: AnalysisViewModel
     private var loadingSpinner: UIActivityIndicatorView?
