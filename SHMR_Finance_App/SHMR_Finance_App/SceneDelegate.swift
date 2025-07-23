@@ -21,9 +21,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let window = UIWindow(windowScene: windowScene)
 
-        let tabBarView = TabBarView()
+        //let tabBarView = TabBarView()
 
-        window.rootViewController = UIHostingController(rootView: tabBarView)
+        //window.rootViewController = UIHostingController(rootView: tabBarView)
+        window.rootViewController = SplashViewController()
 
         self.window = window
         window.makeKeyAndVisible()
